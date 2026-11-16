@@ -20,6 +20,8 @@ xml2pdf convert descargas/ -o pdf/ -f ticket80
 | Web | Convertir en el navegador; los archivos no salen de tu equipo | `apps/web` |
 | Escritorio | Vigilar la carpeta de descargas e imprimir cada comprobante nuevo | `apps/desktop` |
 
+En la web: pega el contenido del XML, arrástralo o elige el archivo; presiona **Convertir** y verás la vista previa en los cuatro formatos, cada una con **Guardar** e **Imprimir**. En Chrome y Edge, Guardar deja elegir la carpeta; en otros navegadores descarga el archivo.
+
 Comprobantes admitidos: factura (01), boleta de venta (03), nota de crédito (07) y nota de débito (08). La entrada puede ser un XML (UTF-8 o ISO-8859-1) o un ZIP con varios; los archivos de respuesta de SUNAT (`R-…xml`) se omiten.
 
 ## Formatos y personalización

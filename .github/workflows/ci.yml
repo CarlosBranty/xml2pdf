@@ -41,6 +41,8 @@ jobs:
           cargo install wasm-bindgen-cli --locked --version "$version"
       - run: ./scripts/build-web.sh
       - run: node scripts/smoke-web.mjs dist/web fixtures
+      - name: Check the web app in a real browser
+        run: python3 scripts/ui-check.py dist/web
 
   desktop:
     name: Desktop check

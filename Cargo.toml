@@ -1,0 +1,40 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/xml2pdf-core",
+    "crates/xml2pdf-render",
+    "crates/xml2pdf-cli",
+    "crates/xml2pdf-wasm",
+]
+default-members = [
+    "crates/xml2pdf-core",
+    "crates/xml2pdf-render",
+    "crates/xml2pdf-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/xml2pdf/xml2pdf"
+description = "Convert SUNAT electronic documents (UBL 2.1 XML) into printable PDFs"
+
+[workspace.dependencies]
+xml2pdf-core = { path = "crates/xml2pdf-core" }
+xml2pdf-render = { path = "crates/xml2pdf-render" }
+roxmltree = "0.21"
+rust_decimal = { version = "1", default-features = false, features = ["std", "serde-str"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+zip = { version = "9", default-features = false, features = ["deflate"] }
+typst = "0.15"
+typst-pdf = "0.15"
+typst-layout = "0.15"
+clap = { version = "4", features = ["derive"] }
+qrcode = { version = "0.14", default-features = false, features = ["svg"] }
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

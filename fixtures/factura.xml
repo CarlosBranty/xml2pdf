@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2">
+  <ext:UBLExtensions>
+    <ext:UBLExtension>
+      <ext:ExtensionContent>
+        <ds:Signature Id="SignatureSP">
+          <ds:SignedInfo>
+            <ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+            <ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+            <ds:Reference URI="">
+              <ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+              <ds:DigestValue>q1W2e3R4t5Y6u7I8o9P0aSdFgHj=</ds:DigestValue>
+            </ds:Reference>
+          </ds:SignedInfo>
+          <ds:SignatureValue>ZmFrZS1zaWduYXR1cmUtZm9yLXRlc3Rpbmc=</ds:SignatureValue>
+        </ds:Signature>
+      </ext:ExtensionContent>
+    </ext:UBLExtension>
+  </ext:UBLExtensions>
+  <cbc:UBLVersionID>2.1</cbc:UBLVersionID>
+  <cbc:CustomizationID>2.0</cbc:CustomizationID>
+  <cbc:ID>F001-00000123</cbc:ID>
+  <cbc:IssueDate>2026-01-15</cbc:IssueDate>
+  <cbc:IssueTime>10:30:00</cbc:IssueTime>
+  <cbc:InvoiceTypeCode listID="0101">01</cbc:InvoiceTypeCode>
+  <cbc:Note languageLocaleID="1000">MIL QUINIENTOS NOVENTA Y TRES CON 00/100 SOLES</cbc:Note>
+  <cbc:Note>Entrega en almacén central</cbc:Note>
+  <cbc:DocumentCurrencyCode>PEN</cbc:DocumentCurrencyCode>
+  <cac:OrderReference>
+    <cbc:ID>OC-2026-0045</cbc:ID>
+  </cac:OrderReference>
+  <cac:DespatchDocumentReference>
+    <cbc:ID>T001-00000087</cbc:ID>
+    <cbc:DocumentTypeCode>09</cbc:DocumentTypeCode>
+  </cac:DespatchDocumentReference>
+  <cac:Signature>
+    <cbc:ID>SignatureSP</cbc:ID>
+    <cac:SignatoryParty>
+      <cac:PartyIdentification>
+        <cbc:ID>20123456789</cbc:ID>
+      </cac:PartyIdentification>
+    </cac:SignatoryParty>
+  </cac:Signature>
+  <cac:AccountingSupplierParty>
+    <cac:Party>
+      <cac:PartyIdentification>
+        <cbc:ID schemeID="6">20123456789</cbc:ID>
+      </cac:PartyIdentification>
+      <cac:PartyName>
+        <cbc:Name><![CDATA[FERRETERÍA ANDINA]]></cbc:Name>
+      </cac:PartyName>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName><![CDATA[COMERCIAL ANDINA S.A.C.]]></cbc:RegistrationName>
+        <cac:RegistrationAddress>
+          <cbc:ID>150101</cbc:ID>
+          <cbc:AddressTypeCode>0000</cbc:AddressTypeCode>
+          <cbc:CitySubdivisionName>-</cbc:CitySubdivisionName>
+          <cbc:CityName>LIMA</cbc:CityName>
+          <cbc:CountrySubentity>LIMA</cbc:CountrySubentity>
+          <cbc:District>LIMA</cbc:District>
+          <cac:AddressLine>
+            <cbc:Line><![CDATA[AV. LOS HÉROES 1234]]></cbc:Line>
+          </cac:AddressLine>
+          <cac:Country>
+            <cbc:IdentificationCode>PE</cbc:IdentificationCode>
+          </cac:Country>
+        </cac:RegistrationAddress>
+      </cac:PartyLegalEntity>
+    </cac:Party>
+  </cac:AccountingSupplierParty>
+  <cac:AccountingCustomerParty>
+    <cac:Party>
+      <cac:PartyIdentification>
+        <cbc:ID schemeID="6">20987654321</cbc:ID>
+      </cac:PartyIdentification>
+      <cac:PartyLegalEntity>
+        <cbc:RegistrationName><![CDATA[CONSTRUCTORA DEL SUR E.I.R.L.]]></cbc:RegistrationName>
+        <cac:RegistrationAddress>
+          <cbc:ID>040101</cbc:ID>
+          <cbc:CityName>AREQUIPA</cbc:CityName>
+          <cbc:CountrySubentity>AREQUIPA</cbc:CountrySubentity>
+          <cbc:District>AREQUIPA</cbc:District>
+          <cac:AddressLine>
+            <cbc:Line><![CDATA[CALLE MERCADERES 456]]></cbc:Line>
+          </cac:AddressLine>
+        </cac:RegistrationAddress>
+      </cac:PartyLegalEntity>
+    </cac:Party>
+  </cac:AccountingCustomerParty>
+  <cac:PaymentTerms>
+    <cbc:ID>FormaPago</cbc:ID>
+    <cbc:PaymentMeansID>Credito</cbc:PaymentMeansID>
+    <cbc:Amount currencyID="PEN">1593.00</cbc:Amount>
+  </cac:PaymentTerms>
+  <cac:PaymentTerms>
+    <cbc:ID>FormaPago</cbc:ID>
+    <cbc:PaymentMeansID>Cuota001</cbc:PaymentMeansID>
+    <cbc:Amount currencyID="PEN">796.50</cbc:Amount>
+    <cbc:PaymentDueDate>2026-02-15</cbc:PaymentDueDate>
+  </cac:PaymentTerms>
+  <cac:PaymentTerms>
+    <cbc:ID>FormaPago</cbc:ID>
+    <cbc:PaymentMeansID>Cuota002</cbc:PaymentMeansID>
+    <cbc:Amount currencyID="PEN">796.50</cbc:Amount>
+    <cbc:PaymentDueDate>2026-03-15</cbc:PaymentDueDate>
+  </cac:PaymentTerms>
+  <cac:TaxTotal>
+    <cbc:TaxAmount currencyID="PEN">243.00</cbc:TaxAmount>
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="PEN">1350.00</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="PEN">243.00</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cac:TaxScheme>
+          <cbc:ID>1000</cbc:ID>
+          <cbc:Name>IGV</cbc:Name>
+          <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode>
+        </cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+  </cac:TaxTotal>
+  <cac:LegalMonetaryTotal>
+    <cbc:LineExtensionAmount currencyID="PEN">1350.00</cbc:LineExtensionAmount>
+    <cbc:TaxInclusiveAmount currencyID="PEN">1593.00</cbc:TaxInclusiveAmount>
+    <cbc:PayableAmount currencyID="PEN">1593.00</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+  <cac:InvoiceLine>
+    <cbc:ID>1</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="NIU">10</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="PEN">1000.00</cbc:LineExtensionAmount>
+    <cac:PricingReference>
+      <cac:AlternativeConditionPrice>
+        <cbc:PriceAmount currencyID="PEN">118.00</cbc:PriceAmount>
+        <cbc:PriceTypeCode>01</cbc:PriceTypeCode>
+      </cac:AlternativeConditionPrice>
+    </cac:PricingReference>
+    <cac:TaxTotal>
+      <cbc:TaxAmount currencyID="PEN">180.00</cbc:TaxAmount>
+      <cac:TaxSubtotal>
+        <cbc:TaxableAmount currencyID="PEN">1000.00</cbc:TaxableAmount>
+        <cbc:TaxAmount currencyID="PEN">180.00</cbc:TaxAmount>
+        <cac:TaxCategory>
+          <cbc:Percent>18</cbc:Percent>
+          <cbc:TaxExemptionReasonCode>10</cbc:TaxExemptionReasonCode>
+          <cac:TaxScheme>
+            <cbc:ID>1000</cbc:ID>
+            <cbc:Name>IGV</cbc:Name>
+            <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode>
+          </cac:TaxScheme>
+        </cac:TaxCategory>
+      </cac:TaxSubtotal>
+    </cac:TaxTotal>
+    <cac:Item>
+      <cbc:Description><![CDATA[CEMENTO PORTLAND TIPO I BOLSA 42.5 KG]]></cbc:Description>
+      <cac:SellersItemIdentification>
+        <cbc:ID>CEM-001</cbc:ID>
+      </cac:SellersItemIdentification>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="PEN">100.00</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+  <cac:InvoiceLine>
+    <cbc:ID>2</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="KGM">2.5</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="PEN">350.00</cbc:LineExtensionAmount>
+    <cac:PricingReference>
+      <cac:AlternativeConditionPrice>
+        <cbc:PriceAmount currencyID="PEN">165.20</cbc:PriceAmount>
+        <cbc:PriceTypeCode>01</cbc:PriceTypeCode>
+      </cac:AlternativeConditionPrice>
+    </cac:PricingReference>
+    <cac:TaxTotal>
+      <cbc:TaxAmount currencyID="PEN">63.00</cbc:TaxAmount>
+      <cac:TaxSubtotal>
+        <cbc:TaxableAmount currencyID="PEN">350.00</cbc:TaxableAmount>
+        <cbc:TaxAmount currencyID="PEN">63.00</cbc:TaxAmount>
+        <cac:TaxCategory>
+          <cbc:Percent>18</cbc:Percent>
+          <cbc:TaxExemptionReasonCode>10</cbc:TaxExemptionReasonCode>
+          <cac:TaxScheme>
+            <cbc:ID>1000</cbc:ID>
+            <cbc:Name>IGV</cbc:Name>
+            <cbc:TaxTypeCode>VAT</cbc:TaxTypeCode>
+          </cac:TaxScheme>
+        </cac:TaxCategory>
+      </cac:TaxSubtotal>
+    </cac:TaxTotal>
+    <cac:Item>
+      <cbc:Description><![CDATA[CLAVOS DE ACERO 3" CON CABEZA, PRESENTACIÓN A GRANEL]]></cbc:Description>
+      <cac:SellersItemIdentification>
+        <cbc:ID>CLA-030</cbc:ID>
+      </cac:SellersItemIdentification>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="PEN">140.00</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+</Invoice>

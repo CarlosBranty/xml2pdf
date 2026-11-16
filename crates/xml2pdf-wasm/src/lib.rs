@@ -68,6 +68,85 @@ pub fn template_data(name: &str, bytes: &[u8], settings: &str) -> Result<String,
     )?)
 }
 
+/// Renders one XML document to PDF without drawing a preview, which is
+/// faster when converting a whole batch.
+#[wasm_bindgen(js_name = renderPdf)]
+pub fn render_pdf(
+    bytes: &[u8],
+    settings: &str,
+    logo: Option<Vec<u8>>,
+    template: Option<String>,
+) -> Result<Vec<u8>, JsError> {
+    let options = options(settings, logo, template)?;
+    let document = xml2pdf_core::parse_bytes(bytes)?;
+    Ok(xml2pdf_render::render(&document, &options)?)
+}
+
+/// An XML document found in an input file.
+#[wasm_bindgen]
+pub struct XmlEntry {
+    name: String,
+    bytes: Vec<u8>,
+}
+
+#[wasm_bindgen]
+impl XmlEntry {
+    #[wasm_bindgen(getter)]
+    pub fn name(&self) -> String {
+        self.name.clone()
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn bytes(&self) -> Vec<u8> {
+        self.bytes.clone()
+    }
+}
+
+/// Splits an input file into its XML documents: a ZIP yields one entry per
+/// XML inside it, any other file yields itself.
+#[wasm_bindgen]
+pub fn extract(name: &str, bytes: &[u8]) -> Result<Vec<XmlEntry>, JsError> {
+    Ok(xml2pdf_core::xml_sources(name, bytes)?
+        .into_iter()
+        .map(|source| XmlEntry {
+            name: source.name,
+            bytes: source.bytes,
+        })
+        .collect())
+}
+
+/// Reads one XML document and returns its summary as JSON: `file_stem`,
+/// `id`, `title`, `issue_date`, `customer` and `total`.
+#[wasm_bindgen]
+pub fn summary(bytes: &[u8]) -> Result<String, JsError> {
+    let document = xml2pdf_core::parse_bytes(bytes)?;
+    Ok(xml2pdf_render::document_summary(&document).to_string())
+}
+
+/// Collects files and packs them into a single ZIP archive.
+#[wasm_bindgen]
+#[derive(Default)]
+pub struct ZipBundle {
+    files: Vec<(String, Vec<u8>)>,
+}
+
+#[wasm_bindgen]
+impl ZipBundle {
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn add(&mut self, name: String, bytes: Vec<u8>) {
+        self.files.push((name, bytes));
+    }
+
+    /// Returns the ZIP archive and releases the bundle.
+    pub fn finish(self) -> Result<Vec<u8>, JsError> {
+        Ok(xml2pdf_core::write_zip(&self.files)?)
+    }
+}
+
 /// Returns the built-in Typst template of a format (`a4`, `a5`, `ticket80`, `ticket58`).
 #[wasm_bindgen(js_name = builtinTemplate)]
 pub fn builtin_template(format: &str) -> Result<String, JsError> {

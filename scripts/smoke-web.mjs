@@ -55,4 +55,31 @@ assert.throws(() => wasm.builtinTemplate("letter"), /unknown format/);
 assert.match(wasm.builtinTemplate("ticket58"), /data\.json/);
 assert.match(wasm.templateData("factura.xml", fixture("factura.xml"), JSON.stringify(defaults)), /F001-00000123/);
 
+// Bulk conversion: split a ZIP, summarize each document and pack the results.
+const entries = wasm.extract("documentos.zip", fixture("documentos.zip"));
+assert.deepEqual(entries.map((entry) => entry.name), ["factura.xml", "nota-credito.xml"]);
+assert.deepEqual(JSON.parse(wasm.summary(entries[0].bytes)), {
+  file_stem: "20123456789-01-F001-00000123",
+  id: "F001-00000123",
+  title: "FACTURA ELECTRÓNICA",
+  issue_date: "15/01/2026",
+  customer: "CONSTRUCTORA DEL SUR E.I.R.L.",
+  total: "S/ 1,593.00",
+});
+assert.throws(() => wasm.summary(new TextEncoder().encode("<ApplicationResponse/>")), /unsupported document/);
+
+const batchPdf = wasm.renderPdf(entries[1].bytes, JSON.stringify({ ...defaults, format: "ticket80" }), undefined, undefined);
+assert.equal(String.fromCharCode(...batchPdf.slice(0, 5)), "%PDF-", "renderPdf returns a PDF");
+
+const bundle = new wasm.ZipBundle();
+for (const entry of entries) bundle.add(entry.name, entry.bytes);
+bundle.add(entries[0].name, entries[0].bytes);
+const packed = wasm.extract("lote.zip", bundle.finish());
+assert.deepEqual(
+  packed.map((entry) => entry.name),
+  ["factura.xml", "nota-credito.xml", "factura (2).xml"],
+  "packed files keep their order and repeated names get a suffix",
+);
+assert.deepEqual(packed[1].bytes, entries[1].bytes);
+
 console.log("web smoke test passed");

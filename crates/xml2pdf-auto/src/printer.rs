@@ -218,19 +218,41 @@ mod tests {
 
     #[test]
     fn builds_the_lp_command() {
-        assert_eq!(lp_arguments(&job(None, 1, None)), ["-n", "1", "--", "/tmp/F001-1.pdf"]);
+        assert_eq!(
+            lp_arguments(&job(None, 1, None)),
+            ["-n", "1", "--", "/tmp/F001-1.pdf"]
+        );
         assert_eq!(
             lp_arguments(&job(Some("Caja 1"), 3, Some("Custom.80x164mm"))),
-            ["-d", "Caja 1", "-n", "3", "-o", "media=Custom.80x164mm", "--", "/tmp/F001-1.pdf"]
+            [
+                "-d",
+                "Caja 1",
+                "-n",
+                "3",
+                "-o",
+                "media=Custom.80x164mm",
+                "--",
+                "/tmp/F001-1.pdf"
+            ]
         );
-        assert_eq!(lp_arguments(&job(None, 0, None))[1], "1", "at least one copy is printed");
+        assert_eq!(
+            lp_arguments(&job(None, 0, None))[1],
+            "1",
+            "at least one copy is printed"
+        );
     }
 
     #[test]
     fn builds_the_sumatra_command() {
         assert_eq!(
             sumatra_arguments(&job(None, 1, None)),
-            ["-print-to-default", "-print-settings", "1x,noscale", "-silent", "/tmp/F001-1.pdf"]
+            [
+                "-print-to-default",
+                "-print-settings",
+                "1x,noscale",
+                "-silent",
+                "/tmp/F001-1.pdf"
+            ]
         );
         assert_eq!(
             sumatra_arguments(&job(Some("Caja 1"), 2, None))[..4],

@@ -12,3 +12,7 @@ rust_decimal.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 zip.workspace = true
+
+[dev-dependencies]
+# Used to build archives in tests; the `deflate` feature is already enabled.
+zip.workspace = true

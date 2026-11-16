@@ -16,3 +16,6 @@ typst.workspace = true
 typst-pdf.workspace = true
 typst-layout.workspace = true
 qrcode.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

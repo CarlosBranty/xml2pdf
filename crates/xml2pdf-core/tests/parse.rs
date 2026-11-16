@@ -5,7 +5,7 @@ use std::str::FromStr;
 
 use xml2pdf_core::{
     ArchiveError, Decimal, DocumentKind, ParseError, PaymentForm, parse_bytes, parse_str,
-    tax_scheme, words, xml_sources,
+    tax_scheme, words, write_zip, xml_sources,
 };
 
 fn fixture(name: &str) -> Vec<u8> {
@@ -265,5 +265,34 @@ fn writes_amounts_in_spanish_words() {
     assert_eq!(
         words::amount_in_words(dec("15"), "USD"),
         "QUINCE CON 00/100 DÓLARES AMERICANOS"
+    );
+}
+
+#[test]
+fn packs_files_into_a_zip() {
+    let files = [
+        ("a.pdf".to_owned(), b"%PDF-first".to_vec()),
+        ("b.pdf".to_owned(), b"%PDF-second".to_vec()),
+        // A repeated name must not replace the earlier file.
+        ("a.pdf".to_owned(), b"%PDF-third".to_vec()),
+    ];
+
+    let archive = write_zip(&files).unwrap();
+
+    let mut zip = zip::ZipArchive::new(std::io::Cursor::new(archive)).unwrap();
+    let mut entries = Vec::new();
+    for index in 0..zip.len() {
+        let mut entry = zip.by_index(index).unwrap();
+        let mut content = Vec::new();
+        std::io::Read::read_to_end(&mut entry, &mut content).unwrap();
+        entries.push((entry.name().unwrap().into_owned(), content));
+    }
+    assert_eq!(
+        entries,
+        [
+            ("a.pdf".to_owned(), b"%PDF-first".to_vec()),
+            ("b.pdf".to_owned(), b"%PDF-second".to_vec()),
+            ("a (2).pdf".to_owned(), b"%PDF-third".to_vec()),
+        ]
     );
 }

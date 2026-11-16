@@ -1,6 +1,7 @@
 //! Input handling: SUNAT portals often deliver the XML inside a ZIP file.
 
-use std::io::{Cursor, Read};
+use std::collections::HashSet;
+use std::io::{Cursor, Read, Write};
 
 #[derive(Debug, thiserror::Error)]
 pub enum ArchiveError {
@@ -55,4 +56,41 @@ pub fn xml_sources(name: &str, bytes: &[u8]) -> Result<Vec<XmlSource>, ArchiveEr
         return Err(ArchiveError::Empty);
     }
     Ok(sources)
+}
+
+/// Packs files into a ZIP archive, in the given order.
+///
+/// A repeated name gets a numeric suffix (`a (2).pdf`), so no file replaces
+/// another. Files are stored without compression: PDFs are already compressed.
+pub fn write_zip(files: &[(String, Vec<u8>)]) -> Result<Vec<u8>, ArchiveError> {
+    let zip_error = |err: zip::result::ZipError| ArchiveError::Zip(err.to_string());
+    let options =
+        zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
+    let mut writer = zip::ZipWriter::new(Cursor::new(Vec::new()));
+    let mut used = HashSet::new();
+
+    for (name, bytes) in files {
+        writer
+            .start_file(unique_name(name, &mut used), options)
+            .map_err(zip_error)?;
+        writer
+            .write_all(bytes)
+            .map_err(|err| ArchiveError::Zip(err.to_string()))?;
+    }
+    Ok(writer.finish().map_err(zip_error)?.into_inner())
+}
+
+/// Returns `name`, or `name (N).ext` when the name was already used.
+fn unique_name(name: &str, used: &mut HashSet<String>) -> String {
+    if used.insert(name.to_owned()) {
+        return name.to_owned();
+    }
+    let (stem, extension) = match name.rsplit_once('.') {
+        Some((stem, extension)) => (stem, format!(".{extension}")),
+        None => (name, String::new()),
+    };
+    (2..)
+        .map(|count| format!("{stem} ({count}){extension}"))
+        .find(|candidate| used.insert(candidate.clone()))
+        .expect("an unused name always exists")
 }

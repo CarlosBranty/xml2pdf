@@ -8,7 +8,7 @@ pub mod model;
 pub mod parser;
 pub mod words;
 
-pub use archive::{ArchiveError, XmlSource, xml_sources};
+pub use archive::{ArchiveError, XmlSource, write_zip, xml_sources};
 pub use model::*;
 pub use parser::{ParseError, parse_bytes, parse_str};
 pub use rust_decimal::Decimal;

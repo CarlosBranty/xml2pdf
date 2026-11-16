@@ -1,0 +1,9 @@
+target
+dist
+.git
+.github
+**/node_modules
+apps/desktop/src-tauri/gen
+odd
+docs
+*.pdf

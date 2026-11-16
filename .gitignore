@@ -1,7 +1,7 @@
 /target
 **/target
 /apps/web/pkg
-/apps/desktop/gen
+/apps/desktop/src-tauri/gen
 node_modules
 dist
 *.pdf

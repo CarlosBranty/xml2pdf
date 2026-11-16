@@ -38,6 +38,7 @@ typst-layout = "0.15"
 clap = { version = "4", features = ["derive"] }
 wasm-bindgen = "0.2"
 notify = "8"
+tempfile = "3"
 qrcode = { version = "0.14", default-features = false, features = ["svg"] }
 
 # Smaller WebAssembly binary for the web app.

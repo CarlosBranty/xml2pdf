@@ -15,7 +15,8 @@ cargo build --package xml2pdf-wasm --target wasm32-unknown-unknown --profile was
 
 mkdir -p "$out"
 cp apps/web/index.html apps/web/styles.css apps/web/app.js apps/web/favicon.svg "$out/"
-"$wasm_bindgen" --target web --no-typescript --out-dir "$out/pkg" \
+"$wasm_bindgen" --target web --no-typescript --remove-name-section --remove-producers-section \
+    --out-dir "$out/pkg" \
     target/wasm32-unknown-unknown/wasm-release/xml2pdf_wasm.wasm
 
 echo "Web app built in $out"

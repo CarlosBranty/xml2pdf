@@ -164,7 +164,7 @@ fn find_sumatra() -> Option<PathBuf> {
         .and_then(|path| path.parent().map(|folder| folder.join(EXECUTABLE)));
     let installed = ["ProgramFiles", "ProgramFiles(x86)", "LOCALAPPDATA"]
         .into_iter()
-        .filter_map(|variable| std::env::var_os(variable))
+        .filter_map(std::env::var_os)
         .map(|folder| PathBuf::from(folder).join("SumatraPDF").join(EXECUTABLE));
 
     std::env::var_os("XML2PDF_SUMATRA")
@@ -201,4 +201,58 @@ fn run(program: &str, arguments: &[String], hint: &'static str) -> Result<String
         });
     }
     Ok(String::from_utf8_lossy(&output.stdout).into_owned())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn job<'a>(printer: Option<&'a str>, copies: u32, media: Option<&str>) -> PrintJob<'a> {
+        PrintJob {
+            pdf: Path::new("/tmp/F001-1.pdf"),
+            printer,
+            copies,
+            media: media.map(str::to_owned),
+        }
+    }
+
+    #[test]
+    fn builds_the_lp_command() {
+        assert_eq!(lp_arguments(&job(None, 1, None)), ["-n", "1", "--", "/tmp/F001-1.pdf"]);
+        assert_eq!(
+            lp_arguments(&job(Some("Caja 1"), 3, Some("Custom.80x164mm"))),
+            ["-d", "Caja 1", "-n", "3", "-o", "media=Custom.80x164mm", "--", "/tmp/F001-1.pdf"]
+        );
+        assert_eq!(lp_arguments(&job(None, 0, None))[1], "1", "at least one copy is printed");
+    }
+
+    #[test]
+    fn builds_the_sumatra_command() {
+        assert_eq!(
+            sumatra_arguments(&job(None, 1, None)),
+            ["-print-to-default", "-print-settings", "1x,noscale", "-silent", "/tmp/F001-1.pdf"]
+        );
+        assert_eq!(
+            sumatra_arguments(&job(Some("Caja 1"), 2, None))[..4],
+            ["-print-to", "Caja 1", "-print-settings", "2x,noscale"]
+        );
+    }
+
+    #[test]
+    fn quotes_powershell_arguments() {
+        let named = job(Some("Caja d'Or"), 1, None);
+        assert_eq!(
+            print_to_script(&named),
+            "Start-Process -FilePath '/tmp/F001-1.pdf' -Verb PrintTo -ArgumentList '\"Caja d''Or\"' -WindowStyle Hidden -Wait"
+        );
+        assert_eq!(
+            print_to_script(&job(None, 1, None)),
+            "Start-Process -FilePath '/tmp/F001-1.pdf' -Verb Print -WindowStyle Hidden -Wait"
+        );
+    }
+
+    #[test]
+    fn splits_printer_lists_into_names() {
+        assert_eq!(lines("Caja\n  Oficina HP \n\n"), ["Caja", "Oficina HP"]);
+    }
 }

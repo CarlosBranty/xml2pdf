@@ -1,0 +1,7 @@
+# Local run of the web app: `docker compose up --build`, then open http://localhost:8080
+services:
+  web:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8080:80"

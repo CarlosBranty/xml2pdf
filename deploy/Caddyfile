@@ -1,0 +1,29 @@
+# Static server for the xml2pdf web app. TLS is terminated by the proxy in
+# front of the container (Traefik on Dokploy), so Caddy listens on plain HTTP.
+{
+	auto_https off
+	admin off
+}
+
+:80 {
+	root * /srv
+
+	handle /healthz {
+		respond "ok" 200
+	}
+
+	handle {
+		header {
+			# The app loads only its own files; `wasm-unsafe-eval` allows
+			# compiling the WebAssembly module and `blob:` the PDF preview.
+			Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; img-src 'self' data: blob:; frame-src blob:; object-src blob:; base-uri 'none'; form-action 'none'"
+			X-Content-Type-Options "nosniff"
+			Referrer-Policy "no-referrer"
+			# File names carry no content hash, so browsers revalidate on each visit.
+			Cache-Control "no-cache"
+		}
+		file_server {
+			precompressed gzip
+		}
+	}
+}

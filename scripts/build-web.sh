@@ -13,8 +13,9 @@ wasm_bindgen="${WASM_BINDGEN:-wasm-bindgen}"
 cd "$root"
 cargo build --package xml2pdf-wasm --target wasm32-unknown-unknown --profile wasm-release --locked
 
-mkdir -p "$out"
+mkdir -p "$out" "$out/fonts"
 cp apps/web/index.html apps/web/styles.css apps/web/app.js apps/web/favicon.svg "$out/"
+cp apps/web/fonts/* "$out/fonts/"
 "$wasm_bindgen" --target web --no-typescript --remove-name-section --remove-producers-section \
     --out-dir "$out/pkg" \
     target/wasm32-unknown-unknown/wasm-release/xml2pdf_wasm.wasm

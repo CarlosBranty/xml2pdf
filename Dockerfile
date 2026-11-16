@@ -13,7 +13,7 @@ RUN cargo install wasm-bindgen-cli --locked \
 
 COPY . .
 RUN ./scripts/build-web.sh /out \
-    && find /out -type f \( -name '*.wasm' -o -name '*.js' -o -name '*.css' -o -name '*.html' -o -name '*.svg' \) \
+    && find /out -type f \( -name '*.wasm' -o -name '*.js' -o -name '*.css' -o -name '*.html' -o -name '*.svg' -o -name '*.ttf' \) \
         -exec gzip -9 --keep {} +
 
 FROM caddy:2-alpine

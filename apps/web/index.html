@@ -9,70 +9,143 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header class="topbar">
-      <h1>xml2pdf</h1>
-      <p>Comprobantes electrónicos SUNAT (XML) a PDF imprimible. Todo se procesa en tu navegador: tus archivos no se suben a ningún servidor.</p>
+    <header class="nav">
+      <a class="brand" href="./" aria-label="xml2pdf, inicio">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 3h12l7 7v19H7z" fill="currentColor" /><path d="M19 3v7h7" fill="#efedeb" /><path d="M11 16h10M11 20.5h10M11 25h6" stroke="#efedeb" stroke-width="2.2" stroke-linecap="round" /></svg>
+        <strong>xml2pdf</strong>
+        <small>XML SUNAT → PDF</small>
+      </a>
+      <nav aria-label="Secciones">
+        <a href="#convertir">Convertir</a>
+        <a href="#formatos">Formatos</a>
+        <a href="#personalizar">Personalizar</a>
+      </nav>
+      <span class="nav-rule" aria-hidden="true"></span>
+      <a class="button dark" href="#convertir">Convertir XML</a>
     </header>
 
-    <main class="layout">
-      <section class="panel" aria-label="Archivos y configuración">
-        <label id="dropzone" class="dropzone" for="file-input">
-          <strong>Arrastra aquí tus XML o ZIP</strong>
-          <span>o haz clic para elegirlos</span>
+    <main class="bento">
+      <section id="convertir" class="card hero">
+        <div class="hero-copy">
+          <p class="eyebrow">De XML SUNAT a PDF imprimible</p>
+          <h1>Convierte<br />tu XML<br />en PDF</h1>
+          <div class="hero-actions">
+            <button id="convert" type="button" class="button cta" disabled>
+              Convertir
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg>
+            </button>
+            <button id="pick-round" type="button" class="round" aria-label="Seleccionar un archivo XML o ZIP">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5M7.5 9.5 12 5l4.5 4.5M5 19h14" /></svg>
+            </button>
+          </div>
+          <p id="status" class="status" role="status">Cargando motor…</p>
+        </div>
+
+        <div id="dropzone" class="hero-input">
+          <label class="eyebrow" for="xml-text">Pega, arrastra o elige tu XML</label>
+          <textarea id="xml-text" spellcheck="false" placeholder="Pega aquí el contenido del XML…"></textarea>
+          <ul id="files" class="chips" aria-label="Archivos elegidos"></ul>
+          <div class="input-row">
+            <button id="pick" type="button" class="button outline">Seleccionar archivo</button>
+            <span class="hint">o arrastra aquí un XML o un ZIP</span>
+          </div>
           <input id="file-input" type="file" accept=".xml,.zip,text/xml,application/zip" multiple hidden />
-        </label>
-
-        <ul id="results" class="results" aria-live="polite"></ul>
-        <div class="actions">
-          <button id="download-all" type="button" disabled>Descargar todos</button>
-          <button id="clear" type="button" class="ghost" disabled>Limpiar</button>
         </div>
 
-        <h2>Formato</h2>
-        <div class="field">
-          <label for="format">Tamaño de papel</label>
-          <select id="format">
-            <option value="a4">A4</option>
-            <option value="a5">A5</option>
-            <option value="ticket80">Ticket 80 mm</option>
-            <option value="ticket58">Ticket 58 mm</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="logo">Logo</label>
-          <div class="inline">
-            <input id="logo" type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml" />
-            <button id="logo-remove" type="button" class="ghost" hidden>Quitar</button>
-          </div>
-        </div>
-        <div class="field">
-          <label for="issuer-lines">Datos adicionales del emisor</label>
-          <textarea id="issuer-lines" rows="3" placeholder="Una línea por dato: teléfono, correo, web…"></textarea>
-        </div>
-        <div class="field">
-          <label for="footer">Texto al pie</label>
-          <input id="footer" type="text" placeholder="Gracias por su preferencia" />
-        </div>
-        <label class="check"><input id="show-qr" type="checkbox" /> Mostrar código QR</label>
-
-        <details id="template-section">
-          <summary>Plantilla personalizada (Typst)</summary>
-          <p class="hint">Edita el diseño del PDF. Los datos del comprobante llegan en <code>data.json</code>.</p>
-          <label class="check"><input id="use-template" type="checkbox" /> Usar esta plantilla en lugar de la integrada</label>
-          <textarea id="template" rows="14" spellcheck="false" aria-label="Plantilla Typst"></textarea>
-          <div class="actions">
-            <button id="template-load" type="button" class="ghost">Cargar plantilla integrada</button>
-          </div>
-        </details>
+        <span class="decor blob" aria-hidden="true"></span>
+        <span class="decor dot-a" aria-hidden="true"></span>
+        <span class="decor dot-b" aria-hidden="true"></span>
+        <svg class="decor arrow" viewBox="0 0 220 110" aria-hidden="true"><path d="M8 100C30 30 110 6 168 46l14-22 26 70-74-8 16-20C104 38 52 52 34 104z" /></svg>
       </section>
 
-      <section class="preview" aria-label="Vista previa">
-        <div class="preview-bar">
-          <span id="status" role="status">Cargando motor…</span>
-          <button id="print" type="button" disabled>Imprimir</button>
+      <section id="resultado" class="card results" hidden>
+        <header class="results-head">
+          <div>
+            <p class="eyebrow">Resultado</p>
+            <h2>Elige tu formato</h2>
+          </div>
+          <div id="documents" class="pills" role="tablist" aria-label="Comprobantes"></div>
+        </header>
+        <ul id="errors" class="errors"></ul>
+        <div id="formats" class="formats"></div>
+        <p id="save-hint" class="hint"></p>
+      </section>
+
+      <section class="card dark">
+        <p class="eyebrow">Privacidad</p>
+        <h2>Todo en tu navegador</h2>
+        <p>El PDF se genera en tu equipo. Tus comprobantes no se suben a ningún servidor.</p>
+        <div class="badges" aria-hidden="true">
+          <span class="badge cyan">XML</span>
+          <span class="badge-line"></span>
+          <span class="badge orange">PDF</span>
         </div>
-        <iframe id="preview" title="Vista previa del PDF"></iframe>
-        <p id="empty" class="empty">Agrega un XML para ver aquí la vista previa.</p>
+      </section>
+
+      <section id="formatos" class="card light">
+        <p class="eyebrow">Explora</p>
+        <h2>Formatos</h2>
+        <ul class="pills tilted">
+          <li class="pill">A4</li>
+          <li class="pill filled">A5</li>
+          <li class="pill filled">Ticket 80 mm</li>
+          <li class="pill">Ticket 58 mm</li>
+        </ul>
+      </section>
+
+      <section class="card blue">
+        <p class="eyebrow">Comprobantes</p>
+        <h2>Factura, boleta<br />+ notas</h2>
+        <p>Lee el XML UBL 2.1 de SUNAT, en UTF-8 o ISO-8859-1, suelto o dentro de un ZIP.</p>
+        <ul class="codes">
+          <li><b class="code purple">01</b>Factura</li>
+          <li><b class="code teal">03</b>Boleta</li>
+          <li><b class="code orange">07</b>N. crédito</li>
+          <li><b class="code ink">08</b>N. débito</li>
+        </ul>
+      </section>
+
+      <section id="personalizar" class="card light wide">
+        <details>
+          <summary>
+            <span>
+              <span class="eyebrow">Opcional</span>
+              <span class="summary-title">Personalizar</span>
+            </span>
+            <span class="round small" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg></span>
+          </summary>
+          <div class="options">
+            <div class="field">
+              <label for="logo">Logo</label>
+              <div class="inline">
+                <input id="logo" type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml" />
+                <button id="logo-remove" type="button" class="button outline small" hidden>Quitar</button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="issuer-lines">Datos adicionales del emisor</label>
+              <textarea id="issuer-lines" rows="3" placeholder="Una línea por dato: teléfono, correo, web…"></textarea>
+            </div>
+            <div class="field">
+              <label for="footer">Texto al pie</label>
+              <input id="footer" type="text" placeholder="Gracias por su preferencia" />
+            </div>
+            <label class="check"><input id="show-qr" type="checkbox" /> Mostrar código QR</label>
+
+            <div class="field template-field">
+              <label class="check"><input id="use-template" type="checkbox" /> Usar una plantilla propia (Typst)</label>
+              <div class="inline">
+                <label for="template-target">Reemplaza a</label>
+                <select id="template-target">
+                  <option value="page">A4 y A5</option>
+                  <option value="ticket">Tickets</option>
+                </select>
+                <button id="template-load" type="button" class="button outline small">Cargar plantilla integrada</button>
+              </div>
+              <textarea id="template" rows="12" spellcheck="false" aria-label="Plantilla Typst"></textarea>
+            </div>
+          </div>
+        </details>
       </section>
     </main>
 

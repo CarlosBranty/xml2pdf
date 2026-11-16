@@ -19,7 +19,6 @@ default-members = [
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
-repository = "https://github.com/xml2pdf/xml2pdf"
 description = "Convert SUNAT electronic documents (UBL 2.1 XML) into printable PDFs"
 
 [workspace.dependencies]

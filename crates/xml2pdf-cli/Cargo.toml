@@ -3,7 +3,6 @@ name = "xml2pdf-cli"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-repository.workspace = true
 description = "Command line converter from SUNAT XML documents to printable PDFs"
 
 [[bin]]

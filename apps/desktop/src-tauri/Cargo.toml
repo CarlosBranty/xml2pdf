@@ -3,7 +3,6 @@ name = "xml2pdf-desktop"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-repository.workspace = true
 description = "Desktop app that converts and prints SUNAT XML documents automatically"
 
 [build-dependencies]

@@ -3,7 +3,6 @@ name = "xml2pdf-auto"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-repository.workspace = true
 description = "Folder watching and automatic printing for xml2pdf"
 
 [dependencies]

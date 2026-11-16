@@ -3,7 +3,6 @@ name = "xml2pdf-render"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-repository.workspace = true
 description = "Typst based PDF renderer for SUNAT electronic documents"
 
 [dependencies]

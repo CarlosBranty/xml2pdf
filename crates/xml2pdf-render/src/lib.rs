@@ -20,7 +20,7 @@ use typst_pdf::PdfOptions;
 use typst_svg::SvgOptions;
 use xml2pdf_core::{ArchiveError, Document, ParseError};
 
-pub use view::template_data;
+pub use view::{document_summary, template_data};
 use world::TemplateWorld;
 
 const PAGE_TEMPLATE: &str = include_str!("../templates/page.typ");

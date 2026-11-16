@@ -6,7 +6,7 @@ use rust_decimal::Decimal;
 use xml2pdf_core::parse_bytes;
 use xml2pdf_render::{
     ConvertError, Logo, PaperFormat, RenderError, RenderOptions, Settings, builtin_template,
-    config, convert, convert_with_preview, format, render, template_data,
+    config, convert, convert_with_preview, document_summary, format, render, template_data,
 };
 
 const FIXTURES: [&str; 4] = [
@@ -476,4 +476,24 @@ fn offers_an_svg_preview_next_to_the_pdf() {
         previews[0].pdf.len(),
         "the PDF is the same with or without preview"
     );
+}
+
+#[test]
+fn summarizes_a_document_for_listings() {
+    let invoice = document_summary(&parse_bytes(&fixture("factura.xml")).unwrap());
+    assert_eq!(
+        invoice,
+        serde_json::json!({
+            "file_stem": "20123456789-01-F001-00000123",
+            "id": "F001-00000123",
+            "title": "FACTURA ELECTRÓNICA",
+            "issue_date": "15/01/2026",
+            "customer": "CONSTRUCTORA DEL SUR E.I.R.L.",
+            "total": "S/ 1,593.00",
+        })
+    );
+
+    let debit = document_summary(&parse_bytes(&fixture("nota-debito.xml")).unwrap());
+    assert_eq!(debit["title"], "NOTA DE DÉBITO ELECTRÓNICA");
+    assert_eq!(debit["total"], "$ 1,593.00");
 }

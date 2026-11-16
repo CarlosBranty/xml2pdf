@@ -80,6 +80,19 @@ pub fn template_data(document: &Document, options: &RenderOptions) -> Value {
     })
 }
 
+/// Short description of a document, for listings that show many of them.
+pub fn document_summary(document: &Document) -> Value {
+    let symbol = catalog::currency_symbol(&document.currency);
+    json!({
+        "file_stem": document.file_stem(),
+        "id": document.id,
+        "title": catalog::document_title(&document.type_code),
+        "issue_date": date(&document.issue_date),
+        "customer": document.customer.legal_name,
+        "total": money_with_symbol(symbol, document.totals.payable),
+    })
+}
+
 fn field(label: &str, value: impl Into<String>) -> Value {
     json!({ "label": label, "value": value.into() })
 }

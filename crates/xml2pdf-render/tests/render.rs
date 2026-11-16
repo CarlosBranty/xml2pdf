@@ -125,7 +125,7 @@ fn builds_the_invoice_data_for_templates() {
     assert_eq!(data["customer"]["doc_label"], "RUC");
     assert_eq!(
         data["amount_in_words"],
-        "SON: MIL QUINIENTOS NOVENTA Y TRES CON 00/100 SOLES"
+        "MIL QUINIENTOS NOVENTA Y TRES CON 00/100 SOLES"
     );
     assert_eq!(
         data["legends"],
@@ -138,13 +138,13 @@ fn builds_the_invoice_data_for_templates() {
     );
     assert_eq!(
         data["total"],
-        serde_json::json!({ "label": "IMPORTE TOTAL", "value": "S/ 1,593.00" })
+        serde_json::json!({ "label": "TOTAL", "value": "S/ 1,593.00", "amount": "1,593.00" })
     );
     assert_eq!(
         data["totals"],
         serde_json::json!([
-            { "label": "OP. GRAVADAS", "value": "S/ 1,350.00" },
-            { "label": "IGV", "value": "S/ 243.00" },
+            { "label": "GRAVADA", "value": "S/ 1,350.00", "amount": "1,350.00" },
+            { "label": "IGV 18.00 %", "value": "S/ 243.00", "amount": "243.00" },
         ])
     );
     assert_eq!(
@@ -152,10 +152,12 @@ fn builds_the_invoice_data_for_templates() {
         serde_json::json!({
             "number": "2", "code": "CLA-030",
             "description": "CLAVOS DE ACERO 3\" CON CABEZA, PRESENTACIÓN A GRANEL",
-            "unit": "KG", "quantity": "2.50", "unit_value": "140.00", "unit_price": "165.20",
-            "discount": "0.00", "value": "350.00", "tax": "63.00", "total": "413.00", "free": false,
+            "unit": "KG", "unit_code": "KGM", "quantity": "2.5", "unit_value": "140.00",
+            "unit_price": "165.20", "discount": "0.00", "value": "350.00", "tax": "63.00",
+            "total": "413.00", "free": false,
         })
     );
+    assert_eq!(data["lines"][0]["quantity"], "10");
     assert_eq!(data["payment"]["form"], "CRÉDITO");
     assert_eq!(data["payment"]["pending"], "S/ 1,593.00");
     assert_eq!(
@@ -169,6 +171,10 @@ fn builds_the_invoice_data_for_templates() {
     );
     assert_eq!(data["qr"], "qr.svg");
     assert_eq!(data["logo"], serde_json::Value::Null);
+    assert!(
+        data.get("accent").is_none(),
+        "documents are printed without colors"
+    );
 
     let labels: Vec<&str> = data["doc"]["fields"]
         .as_array()
@@ -195,21 +201,32 @@ fn builds_receipt_totals_and_generates_the_amount_in_words() {
 
     assert_eq!(data["doc"]["title"], "BOLETA DE VENTA ELECTRÓNICA");
     assert_eq!(data["customer"]["doc_label"], "DNI");
-    assert_eq!(
-        data["amount_in_words"],
-        "SON: SETENTA Y NUEVE CON 50/100 SOLES"
-    );
+    assert_eq!(data["amount_in_words"], "SETENTA Y NUEVE CON 50/100 SOLES");
     assert_eq!(
         data["totals"],
         serde_json::json!([
-            { "label": "OP. GRAVADAS", "value": "S/ 50.00" },
-            { "label": "OP. EXONERADAS", "value": "S/ 20.00" },
-            { "label": "IGV", "value": "S/ 9.00" },
-            { "label": "ICBPER", "value": "S/ 0.50" },
+            { "label": "GRAVADA", "value": "S/ 50.00", "amount": "50.00" },
+            { "label": "EXONERADA", "value": "S/ 20.00", "amount": "20.00" },
+            { "label": "IGV 18.00 %", "value": "S/ 9.00", "amount": "9.00" },
+            { "label": "ICBPER", "value": "S/ 0.50", "amount": "0.50" },
         ])
     );
     assert_eq!(data["payment"]["form"], "CONTADO");
     assert_eq!(data["affected"], serde_json::Value::Null);
+}
+
+#[test]
+fn labels_the_igv_with_its_rate_only_when_every_line_shares_it() {
+    let mixed = String::from_utf8(fixture("factura.xml")).unwrap().replacen(
+        "<cbc:Percent>18</cbc:Percent>",
+        "<cbc:Percent>10</cbc:Percent>",
+        1,
+    );
+    let document = parse_bytes(mixed.as_bytes()).unwrap();
+
+    let data = template_data(&document, &RenderOptions::default());
+
+    assert_eq!(data["totals"][1]["label"], "IGV");
 }
 
 #[test]
@@ -231,7 +248,7 @@ fn describes_the_document_modified_by_a_note() {
     assert_eq!(debit["total"]["value"], "$ 1,593.00");
     assert_eq!(
         debit["amount_in_words"],
-        "SON: MIL QUINIENTOS NOVENTA Y TRES CON 00/100 DÓLARES AMERICANOS"
+        "MIL QUINIENTOS NOVENTA Y TRES CON 00/100 DÓLARES AMERICANOS"
     );
 }
 
@@ -239,7 +256,6 @@ fn describes_the_document_modified_by_a_note() {
 fn applies_the_settings_to_the_template_data() {
     let settings = Settings {
         format: PaperFormat::Ticket58,
-        accent_color: "#aa0000".to_owned(),
         issuer_lines: vec!["Tel. 01 555 0100".to_owned()],
         footer: Some("Gracias por su compra".to_owned()),
         show_qr: false,
@@ -256,7 +272,6 @@ fn applies_the_settings_to_the_template_data() {
         data["page"],
         serde_json::json!({ "width": 58, "ticket": true })
     );
-    assert_eq!(data["accent"], "#aa0000");
     assert_eq!(
         data["issuer"]["extra"],
         serde_json::json!(["Tel. 01 555 0100"])
@@ -321,37 +336,20 @@ fn offers_the_built_in_templates_as_a_starting_point() {
 #[test]
 fn validates_settings() {
     assert_eq!(Settings::from_json("{}").unwrap(), Settings::default());
-    let parsed =
-        Settings::from_json(r##"{"format":"ticket80","accent_color":"#ABCDEF","show_qr":false}"##)
-            .unwrap();
+    let parsed = Settings::from_json(r#"{"format":"ticket80","show_qr":false}"#).unwrap();
     assert_eq!(parsed.format, PaperFormat::Ticket80);
     assert!(!parsed.show_qr);
 
-    assert!(matches!(
-        Settings::from_json(r#"{"formato":"a4"}"#),
-        Err(RenderError::Settings(_))
-    ));
-    assert!(matches!(
-        Settings::from_json(r#"{"format":"letter"}"#),
-        Err(RenderError::Settings(_))
-    ));
-    assert!(matches!(
-        Settings::from_json(r#"{"accent_color":"blue"}"#),
-        Err(RenderError::InvalidColor(color)) if color == "blue"
-    ));
-
-    let document = parse_bytes(&fixture("factura.xml")).unwrap();
-    let invalid = RenderOptions {
-        settings: Settings {
-            accent_color: "#12".to_owned(),
-            ..Settings::default()
-        },
-        ..RenderOptions::default()
-    };
-    assert!(matches!(
-        render(&document, &invalid),
-        Err(RenderError::InvalidColor(_))
-    ));
+    for invalid in [
+        r#"{"formato":"a4"}"#,
+        r#"{"format":"letter"}"#,
+        r##"{"accent_color":"#aa0000"}"##,
+    ] {
+        assert!(
+            matches!(Settings::from_json(invalid), Err(RenderError::Settings(_))),
+            "{invalid} must be rejected"
+        );
+    }
 }
 
 #[test]
@@ -391,6 +389,9 @@ fn formats_numbers_and_dates() {
     assert_eq!(format::decimals(dec("2")), "2.00");
     assert_eq!(format::decimals(dec("0.12500")), "0.125");
     assert_eq!(format::decimals(dec("1500.5")), "1,500.50");
+    assert_eq!(format::quantity(dec("10")), "10");
+    assert_eq!(format::quantity(dec("2.50")), "2.5");
+    assert_eq!(format::quantity(dec("1500.000")), "1,500");
     assert_eq!(format::date("2026-01-15"), "15/01/2026");
     assert_eq!(format::date("2026-01-15T10:30:00"), "15/01/2026");
     assert_eq!(format::date("sin fecha"), "sin fecha");
@@ -445,12 +446,5 @@ fn rejects_invalid_configuration_files() {
         .unwrap_err()
         .to_string();
     assert!(missing_logo.contains("nope.png"), "{missing_logo}");
-    let bad_color = config::load(&write(r#"{"accent_color":"red"}"#))
-        .unwrap_err()
-        .to_string();
-    assert!(
-        bad_color.contains("invalid accent color `red`"),
-        "{bad_color}"
-    );
     assert!(config::load(&folder.path().join("missing.json")).is_err());
 }

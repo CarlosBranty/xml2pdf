@@ -131,6 +131,8 @@ pub struct Line {
     pub discount: Decimal,
     /// Catalog 07 IGV affectation code (`10` gravado, `20` exonerado, ...).
     pub tax_affectation: Option<String>,
+    /// IGV rate applied to the line, for example `18`. `None` when the line pays no IGV.
+    pub igv_percent: Option<Decimal>,
     /// True for free-of-charge items (price type 02).
     pub free: bool,
 }

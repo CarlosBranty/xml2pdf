@@ -93,8 +93,6 @@ impl FromStr for PaperFormat {
 #[serde(default, deny_unknown_fields)]
 pub struct Settings {
     pub format: PaperFormat,
-    /// Accent color as `#rrggbb`, used by the page templates.
-    pub accent_color: String,
     /// Extra lines printed under the issuer, such as phone, email or website.
     pub issuer_lines: Vec<String>,
     /// Extra text printed at the end of the document.
@@ -106,7 +104,6 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             format: PaperFormat::default(),
-            accent_color: "#1f3a5f".to_owned(),
             issuer_lines: Vec::new(),
             footer: None,
             show_qr: true,
@@ -117,18 +114,7 @@ impl Default for Settings {
 impl Settings {
     /// Parses settings from JSON. Unknown keys are rejected so typos surface.
     pub fn from_json(json: &str) -> Result<Self, RenderError> {
-        let settings: Settings =
-            serde_json::from_str(json).map_err(|err| RenderError::Settings(err.to_string()))?;
-        settings.validate()?;
-        Ok(settings)
-    }
-
-    pub fn validate(&self) -> Result<(), RenderError> {
-        let hex = self.accent_color.strip_prefix('#').unwrap_or_default();
-        if hex.len() != 6 || !hex.bytes().all(|byte| byte.is_ascii_hexdigit()) {
-            return Err(RenderError::InvalidColor(self.accent_color.clone()));
-        }
-        Ok(())
+        serde_json::from_str(json).map_err(|err| RenderError::Settings(err.to_string()))
     }
 }
 
@@ -178,8 +164,6 @@ pub enum RenderError {
     UnknownFormat(String),
     #[error("invalid settings: {0}")]
     Settings(String),
-    #[error("invalid accent color `{0}`: expected #rrggbb")]
-    InvalidColor(String),
     #[error("unsupported logo: expected a PNG, JPEG, GIF, WebP or SVG image")]
     UnsupportedLogo,
     #[error("the QR code cannot be generated: {0}")]
@@ -260,8 +244,6 @@ fn render_sized(
     document: &Document,
     options: &RenderOptions,
 ) -> Result<(Vec<u8>, (f64, f64)), RenderError> {
-    options.settings.validate()?;
-
     let data = template_data(document, options);
     let mut files = vec![("data.json".to_owned(), data.to_string().into_bytes())];
     if options.settings.show_qr {

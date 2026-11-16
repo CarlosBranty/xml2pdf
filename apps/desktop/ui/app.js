@@ -44,7 +44,6 @@ function showConfig() {
   $("printer").value = config.printer ?? "";
   $("copies").value = config.copies;
   $("format").value = config.settings.format;
-  $("accent").value = config.settings.accent_color;
   $("issuer-lines").value = config.settings.issuer_lines.join("\n");
   $("footer").value = config.settings.footer ?? "";
   $("show-qr").checked = config.settings.show_qr;
@@ -101,7 +100,6 @@ function readForm() {
   config.printer = $("printer").value || null;
   config.copies = Number.parseInt($("copies").value, 10) || 1;
   config.settings.format = $("format").value;
-  config.settings.accent_color = $("accent").value;
   config.settings.issuer_lines = $("issuer-lines")
     .value.split("\n")
     .map((line) => line.trim())
@@ -138,7 +136,7 @@ async function reset(key) {
 // --- Events ----------------------------------------------------------------
 
 function bindEvents() {
-  const fields = ["watch-on-start", "print", "printer", "copies", "format", "accent", "issuer-lines", "footer", "show-qr"];
+  const fields = ["watch-on-start", "print", "printer", "copies", "format", "issuer-lines", "footer", "show-qr"];
   for (const id of fields) $(id).addEventListener("input", scheduleSave);
 
   $("pick-watch-dir").addEventListener("click", () => choose("pick_folder", "watch_dir"));

@@ -166,9 +166,12 @@ fn rejects_invalid_style_options() {
     assert_eq!(code, 2);
     assert!(stderr.contains("unknown format `letter`"), "{stderr}");
 
-    let (code, _, stderr) = convert(&["--accent", "blue"]);
-    assert_eq!(code, 1);
-    assert!(stderr.contains("invalid accent color `blue`"), "{stderr}");
+    let (code, _, stderr) = convert(&["--accent", "#aa0000"]);
+    assert_eq!(code, 2, "documents have no color option");
+    assert!(
+        stderr.contains("unexpected argument '--accent'"),
+        "{stderr}"
+    );
 
     let (code, _, stderr) = convert(&["--logo", "/does/not/exist.png"]);
     assert_eq!(code, 1);
@@ -186,11 +189,7 @@ fn rejects_invalid_style_options() {
 fn applies_a_configuration_file_and_lets_options_override_it() {
     let folder = tempfile::tempdir().unwrap();
     let config = folder.path().join("config.json");
-    std::fs::write(
-        &config,
-        r##"{"format":"ticket58","accent_color":"#aa0000","footer":"Gracias"}"##,
-    )
-    .unwrap();
+    std::fs::write(&config, r##"{"format":"ticket58","footer":"Gracias"}"##).unwrap();
 
     let data = |extra: &[&str]| {
         let (code, stdout, stderr) = run(xml2pdf()
@@ -208,7 +207,6 @@ fn applies_a_configuration_file_and_lets_options_override_it() {
         from_config.contains(r#""format": "ticket58""#),
         "{from_config}"
     );
-    assert!(from_config.contains(r##""accent": "#aa0000""##));
     assert!(from_config.contains(r#""footer": "Gracias""#));
     assert!(from_config.contains(r#""qr": "qr.svg""#));
 
@@ -217,8 +215,8 @@ fn applies_a_configuration_file_and_lets_options_override_it() {
     assert!(overridden.contains(r#""footer": "Hasta pronto""#));
     assert!(overridden.contains(r#""qr": null"#));
     assert!(
-        overridden.contains(r##""accent": "#aa0000""##),
-        "values not overridden stay"
+        overridden.contains(r#""issuer""#),
+        "the document data is still printed"
     );
 
     std::fs::write(&config, r#"{"paper":"a4"}"#).unwrap();

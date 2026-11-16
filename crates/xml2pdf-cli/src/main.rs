@@ -89,9 +89,6 @@ struct StyleArgs {
     /// Custom Typst template replacing the built-in one
     #[arg(long)]
     template: Option<PathBuf>,
-    /// Accent color as #rrggbb
-    #[arg(long)]
-    accent: Option<String>,
     /// Extra text printed at the end of the document
     #[arg(long)]
     footer: Option<String>,
@@ -109,9 +106,6 @@ impl StyleArgs {
         if let Some(format) = self.format {
             options.settings.format = format;
         }
-        if let Some(accent) = &self.accent {
-            options.settings.accent_color = accent.clone();
-        }
         if let Some(footer) = &self.footer {
             options.settings.footer = Some(footer.clone());
         }
@@ -124,7 +118,6 @@ impl StyleArgs {
         if let Some(path) = &self.template {
             options.template = Some(config::load_template(path).map_err(|err| err.to_string())?);
         }
-        options.settings.validate().map_err(|err| err.to_string())?;
         Ok(options)
     }
 }

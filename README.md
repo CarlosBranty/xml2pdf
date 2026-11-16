@@ -27,7 +27,6 @@ Comprobantes admitidos: factura (01), boleta de venta (03), nota de crédito (07
 | Opción | Valores | CLI |
 |--------|---------|-----|
 | Tamaño de papel | `a4`, `a5`, `ticket80`, `ticket58` | `--format` |
-| Color principal | `#rrggbb` | `--accent` |
 | Logo | PNG, JPEG, GIF, WebP o SVG | `--logo` |
 | Texto al pie | texto libre | `--footer` |
 | Código QR | visible u oculto | `--no-qr` |
@@ -38,7 +37,6 @@ Las mismas opciones se pueden guardar en un archivo JSON y usar con `--config`; 
 ```json
 {
   "format": "a4",
-  "accent_color": "#1f3a5f",
   "issuer_lines": ["Tel. 01 555 0100", "ventas@ejemplo.pe"],
   "footer": "Gracias por su preferencia",
   "show_qr": true,

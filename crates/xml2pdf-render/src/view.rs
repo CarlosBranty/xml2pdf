@@ -8,7 +8,7 @@ use serde_json::{Value, json};
 use xml2pdf_core::{Document, DocumentKind, Line, PaymentForm, catalog, tax_scheme, words};
 
 use crate::RenderOptions;
-use crate::format::{date, decimals, money, money_with_symbol};
+use crate::format::{date, decimals, money, money_with_symbol, quantity};
 
 /// Legend code of the amount written in words (catalog 52).
 const AMOUNT_IN_WORDS: &str = "1000";
@@ -23,7 +23,6 @@ pub fn template_data(document: &Document, options: &RenderOptions) -> Value {
     json!({
         "format": settings.format.as_str(),
         "page": { "width": settings.format.width_mm(), "ticket": settings.format.is_ticket() },
-        "accent": settings.accent_color,
         "logo": options.logo.as_ref().map(|logo| logo.file_name()),
         "qr": settings.show_qr.then_some("qr.svg"),
         "doc": {
@@ -55,7 +54,7 @@ pub fn template_data(document: &Document, options: &RenderOptions) -> Value {
         },
         "lines": document.lines.iter().map(line).collect::<Vec<_>>(),
         "totals": totals(document, &amount),
-        "total": { "label": "IMPORTE TOTAL", "value": amount(document.totals.payable) },
+        "total": total_row("TOTAL", document.totals.payable, &amount),
         "amount_in_words": amount_in_words(document),
         "legends": document
             .legends
@@ -135,7 +134,8 @@ fn line(line: &Line) -> Value {
         "code": line.code.as_deref().unwrap_or_default(),
         "description": line.description,
         "unit": catalog::unit_label(&line.unit_code),
-        "quantity": decimals(line.quantity),
+        "unit_code": line.unit_code,
+        "quantity": quantity(line.quantity),
         "unit_value": decimals(line.unit_value),
         "unit_price": decimals(unit_price.round_dp(6)),
         "discount": money(line.discount),
@@ -146,21 +146,28 @@ fn line(line: &Line) -> Value {
     })
 }
 
+/// A totals row. `value` carries the currency symbol; `amount` is the number
+/// alone, for layouts that print the symbol in its own column.
+fn total_row(label: &str, value: Decimal, amount: &impl Fn(Decimal) -> String) -> Value {
+    json!({ "label": label, "value": amount(value), "amount": money(value) })
+}
+
 /// Totals in printing order. Rows without an amount are left out.
 fn totals(document: &Document, amount: &impl Fn(Decimal) -> String) -> Vec<Value> {
     let base = |scheme| document.taxable(scheme);
     let tax = |scheme| document.tax_amount(scheme);
     let taxed = base(tax_scheme::IGV);
+    let igv = igv_label(document);
 
     let rows = [
-        ("OP. GRAVADAS", taxed, false),
-        ("OP. EXONERADAS", base(tax_scheme::EXEMPT), false),
-        ("OP. INAFECTAS", base(tax_scheme::UNAFFECTED), false),
-        ("OP. EXPORTACIÓN", base(tax_scheme::EXPORT), false),
-        ("OP. GRATUITAS", base(tax_scheme::FREE), false),
+        ("GRAVADA", taxed, false),
+        ("EXONERADA", base(tax_scheme::EXEMPT), false),
+        ("INAFECTA", base(tax_scheme::UNAFFECTED), false),
+        ("EXPORTACIÓN", base(tax_scheme::EXPORT), false),
+        ("GRATUITA", base(tax_scheme::FREE), false),
         ("DESCUENTOS", document.totals.discounts, false),
         ("ISC", tax(tax_scheme::ISC), false),
-        ("IGV", tax(tax_scheme::IGV), !taxed.is_zero()),
+        (igv.as_str(), tax(tax_scheme::IGV), !taxed.is_zero()),
         ("IVAP", tax(tax_scheme::IVAP), false),
         ("ICBPER", tax(tax_scheme::ICBPER), false),
         ("OTROS TRIBUTOS", tax(tax_scheme::OTHER), false),
@@ -171,28 +178,41 @@ fn totals(document: &Document, amount: &impl Fn(Decimal) -> String) -> Vec<Value
     let mut printed: Vec<Value> = rows
         .into_iter()
         .filter(|(_, value, always)| *always || !value.is_zero())
-        .map(|(label, value, _)| json!({ "label": label, "value": amount(value) }))
+        .map(|(label, value, _)| total_row(label, value, amount))
         .collect();
     if printed.is_empty() && !document.totals.line_extension.is_zero() {
-        printed
-            .push(json!({ "label": "SUBTOTAL", "value": amount(document.totals.line_extension) }));
+        printed.push(total_row(
+            "SUBTOTAL",
+            document.totals.line_extension,
+            amount,
+        ));
     }
     printed
 }
 
-/// Amount in words: the legend of the XML when present, otherwise generated.
+/// `IGV 18.00 %` when every taxed line shares one rate, otherwise `IGV`.
+fn igv_label(document: &Document) -> String {
+    let mut rates = document
+        .lines
+        .iter()
+        .filter_map(|line| line.igv_percent)
+        .filter(|rate| !rate.is_zero());
+    match rates.next() {
+        Some(rate) if rates.all(|other| other == rate) => format!("IGV {rate:.2} %"),
+        _ => "IGV".to_owned(),
+    }
+}
+
+/// Amount in words without the `SON:` prefix: the legend of the XML when
+/// present, otherwise generated.
 fn amount_in_words(document: &Document) -> String {
-    let words = match document.legend(AMOUNT_IN_WORDS) {
-        Some(legend) => legend.trim().to_owned(),
-        None => words::amount_in_words(document.totals.payable, &document.currency),
+    let Some(legend) = document.legend(AMOUNT_IN_WORDS) else {
+        return words::amount_in_words(document.totals.payable, &document.currency);
     };
-    let has_prefix = words
-        .get(..4)
-        .is_some_and(|prefix| prefix.eq_ignore_ascii_case("SON:"));
-    if has_prefix {
-        words
-    } else {
-        format!("SON: {words}")
+    let legend = legend.trim();
+    match legend.get(..4) {
+        Some(prefix) if prefix.eq_ignore_ascii_case("SON:") => legend[4..].trim_start().to_owned(),
+        _ => legend.to_owned(),
     }
 }
 

@@ -78,7 +78,7 @@
 #text(size: base + 1.5pt, pair(strong(d.total.label), strong(d.total.value)))
 
 #v(1mm)
-#d.amount_in_words
+SON: #d.amount_in_words
 
 #for legend in d.legends [
   #legend

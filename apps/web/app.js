@@ -14,7 +14,6 @@ const elements = {
   downloadAll: $("download-all"),
   clear: $("clear"),
   format: $("format"),
-  accent: $("accent"),
   logo: $("logo"),
   logoRemove: $("logo-remove"),
   issuerLines: $("issuer-lines"),
@@ -89,7 +88,6 @@ function loadState() {
 
 function fillForm() {
   elements.format.value = state.settings.format;
-  elements.accent.value = state.settings.accent_color;
   elements.issuerLines.value = state.settings.issuer_lines.join("\n");
   elements.footer.value = state.settings.footer ?? "";
   elements.showQr.checked = state.settings.show_qr;
@@ -100,7 +98,6 @@ function fillForm() {
 
 function readForm() {
   state.settings.format = elements.format.value;
-  state.settings.accent_color = elements.accent.value;
   state.settings.issuer_lines = elements.issuerLines.value
     .split("\n")
     .map((line) => line.trim())
@@ -237,7 +234,7 @@ function bindEvents() {
   }
   elements.dropzone.addEventListener("drop", (event) => addFiles(event.dataTransfer.files));
 
-  const inputs = [elements.format, elements.accent, elements.issuerLines, elements.footer];
+  const inputs = [elements.format, elements.issuerLines, elements.footer];
   for (const input of [...inputs, elements.showQr, elements.useTemplate, elements.template]) {
     input.addEventListener("input", scheduleRender);
   }

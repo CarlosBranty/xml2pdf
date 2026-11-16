@@ -21,6 +21,11 @@ pub fn decimals(value: Decimal) -> String {
     group_thousands(&format!("{normalized:.scale$}"))
 }
 
+/// Formats a quantity without padding decimals: `10`, `2.5`, `1,500`.
+pub fn quantity(value: Decimal) -> String {
+    group_thousands(&value.normalize().to_string())
+}
+
 /// Converts an ISO date (`2026-01-15`) into `15/01/2026`. Other inputs are
 /// returned unchanged.
 pub fn date(iso: &str) -> String {

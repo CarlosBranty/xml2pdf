@@ -42,7 +42,7 @@ for (const [name, format, expected] of cases) {
 }
 
 assert.throws(() => convert("factura.xml", { format: "letter" }), /invalid settings/);
-assert.throws(() => convert("factura.xml", { accent_color: "blue" }), /invalid accent color/);
+assert.throws(() => convert("factura.xml", { accent_color: "#aa0000" }), /invalid settings/);
 assert.throws(() => convert("factura.xml", {}, "#let broken = ("), /template failed to compile/);
 assert.throws(() => wasm.builtinTemplate("letter"), /unknown format/);
 assert.match(wasm.builtinTemplate("ticket58"), /data\.json/);

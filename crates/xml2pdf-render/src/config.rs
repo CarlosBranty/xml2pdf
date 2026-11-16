@@ -47,7 +47,6 @@ pub fn load(path: &Path) -> Result<RenderOptions, ConfigError> {
 
     let settings: Settings =
         serde_json::from_value(json).map_err(|err| invalid(err.to_string()))?;
-    settings.validate()?;
 
     Ok(RenderOptions {
         settings,

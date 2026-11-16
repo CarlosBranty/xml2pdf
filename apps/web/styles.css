@@ -194,15 +194,6 @@ input[type="file"] {
   font-size: 13px;
 }
 
-input[type="color"] {
-  width: 56px;
-  height: 32px;
-  padding: 2px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg);
-}
-
 .check {
   display: flex;
   align-items: center;

@@ -84,6 +84,7 @@ fn parses_invoice_lines_and_totals() {
     assert_eq!(line.line_total, dec("350.00"));
     assert_eq!(line.tax_amount, dec("63.00"));
     assert_eq!(line.tax_affectation.as_deref(), Some("10"));
+    assert_eq!(line.igv_percent, Some(dec("18")));
     assert!(!line.free);
 
     assert_eq!(doc.taxable(tax_scheme::IGV), dec("1350.00"));
@@ -129,6 +130,10 @@ fn parses_a_receipt_encoded_in_iso_8859_1() {
     );
     assert_eq!(doc.payment.as_ref().unwrap().form, PaymentForm::Cash);
     assert_eq!(doc.taxable(tax_scheme::EXEMPT), dec("20.00"));
+    assert_eq!(
+        doc.lines[1].igv_percent, None,
+        "an exempt line has no IGV rate"
+    );
     assert_eq!(doc.tax_amount(tax_scheme::ICBPER), dec("0.50"));
     assert_eq!(doc.totals.payable, dec("79.50"));
     assert!(doc.legends.is_empty());

@@ -265,6 +265,18 @@ fn line(node: Node, quantity_tag: &str) -> Line {
         })
         .unwrap_or_default();
 
+    let igv_percent = child(node, "TaxTotal").and_then(|total| {
+        children(total, "TaxSubtotal")
+            .filter_map(|subtotal| child(subtotal, "TaxCategory"))
+            .find(|category| {
+                path(*category, &["TaxScheme", "ID"])
+                    .and_then(own_text)
+                    .as_deref()
+                    == Some(crate::model::tax_scheme::IGV)
+            })
+            .and_then(|category| decimal(category, "Percent"))
+    });
+
     Line {
         number: text(node, "ID").unwrap_or_default(),
         code: item
@@ -290,6 +302,7 @@ fn line(node: Node, quantity_tag: &str) -> Line {
             .unwrap_or_default(),
         discount,
         tax_affectation: tax_category.and_then(|category| text(category, "TaxExemptionReasonCode")),
+        igv_percent,
         free,
     }
 }

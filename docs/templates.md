@@ -26,7 +26,6 @@ La fuente incluida es **Noto Sans** (normal y negrita).
 |-------|-----------|
 | `format` | `a4`, `a5`, `ticket80` o `ticket58` |
 | `page.width`, `page.ticket` | Ancho del papel en mm y si es papel continuo |
-| `accent` | Color principal `#rrggbb` |
 | `logo`, `qr` | Nombre del archivo de imagen, o nulo |
 | `doc.title`, `doc.id`, `doc.type_code` | Título (`FACTURA ELECTRÓNICA`), serie y número, código de tipo |
 | `doc.issue_date`, `doc.issue_time`, `doc.due_date` | Fechas y hora |
@@ -35,10 +34,10 @@ La fuente incluida es **Noto Sans** (normal y negrita).
 | `issuer.ruc`, `issuer.name`, `issuer.trade_name`, `issuer.address`, `issuer.extra` | Emisor; `extra` son las líneas adicionales configuradas |
 | `customer.doc_label`, `customer.doc_number`, `customer.name`, `customer.address` | Cliente |
 | `customer.fields` | Lista `{label, value}` con los datos del cliente |
-| `lines[]` | Ítems: `number`, `code`, `description`, `unit`, `quantity`, `unit_value` (sin impuestos), `unit_price` (con impuestos), `discount`, `value` (sin impuestos), `tax`, `total` (con impuestos), `free` |
-| `totals[]` | Filas `{label, value}` en orden de impresión; solo las que tienen importe |
-| `total` | `{label, value}` del importe total |
-| `amount_in_words` | `SON: … CON 00/100 SOLES` |
+| `lines[]` | Ítems: `number`, `code`, `description`, `unit` (abreviatura), `unit_code` (código SUNAT), `quantity`, `unit_value` (sin impuestos), `unit_price` (con impuestos), `discount`, `value` (sin impuestos), `tax`, `total` (con impuestos), `free` |
+| `totals[]` | Filas `{label, value, amount}` en orden de impresión; solo las que tienen importe. `value` incluye el símbolo de moneda y `amount` no |
+| `total` | `{label, value, amount}` del importe total |
+| `amount_in_words` | `… CON 00/100 SOLES`, sin el prefijo `SON:` |
 | `legends[]`, `notes[]` | Leyendas y observaciones |
 | `payment` | Nulo o `{form, pending, installments[]}`; cada cuota tiene `number`, `due_date`, `amount` |
 | `detraction` | Nulo o `{code, percent, amount, account}` |

@@ -1,11 +1,25 @@
 // xml2pdf web app: converts SUNAT XML documents to PDF inside the browser.
 // The conversion runs in WebAssembly; no file is sent to a server.
 
-import init, { convert, builtinTemplate, defaultSettings } from "./pkg/xml2pdf_wasm.js";
+import init, {
+  ZipBundle,
+  builtinTemplate,
+  convert,
+  defaultSettings,
+  extract,
+  renderPdf,
+  summary,
+} from "./pkg/xml2pdf_wasm.js";
 
 const STORAGE_KEY = "xml2pdf.state.v2";
 const RENDER_DELAY_MS = 350;
 const PASTED_NAME = "pegado.xml";
+
+// Batch limits, so a large selection cannot exhaust the browser's memory.
+const MAX_DOCUMENTS = 100;
+const MAX_TOTAL_BYTES = 50 * 1024 * 1024;
+/** File chips shown before the rest collapse into a counter. */
+const CHIPS_SHOWN = 6;
 
 /** Formats shown after converting, in display order. */
 const FORMATS = [
@@ -15,16 +29,26 @@ const FORMATS = [
   { id: "ticket58", title: "Ticket 58", size: "58 mm", family: "ticket" },
 ];
 
+const PDF_TYPE = { description: "PDF", mime: "application/pdf", extension: ".pdf" };
+const ZIP_TYPE = { description: "ZIP", mime: "application/zip", extension: ".zip" };
+
 const $ = (id) => document.getElementById(id);
 
 const state = {
   /** Files chosen or dropped: `{ name, bytes }`. */
   files: [],
-  /** Converted documents: `{ name, formats: { [formatId]: { fileName, blob, pdfUrl, previewUrl } } }`. */
+  /**
+   * Documents of the batch, one per XML: `{ name, bytes, summary }` when it
+   * can be read, `{ name, error }` when it cannot.
+   */
   documents: [],
-  /** Inputs that could not be converted: `{ name, message }`. */
-  errors: [],
+  /** Documents left out because the batch was over the limit. */
+  omitted: 0,
   selected: 0,
+  /** Rendered formats of the selected document: `{ [formatId]: { fileName, blob, pdfUrl, previewUrl } }`. */
+  current: null,
+  /** Why the selected document could not be rendered, if it failed. */
+  renderError: "",
   settings: {},
   /** Logo image as a `Uint8Array`, or `null`. */
   logo: null,
@@ -34,12 +58,15 @@ const state = {
 };
 
 let ready = false;
+let saving = false;
 let renderTimer = 0;
 
 function setStatus(message, isError = false) {
   $("status").textContent = message;
   $("status").classList.toggle("error", isError);
 }
+
+const errorText = (error) => String(error?.message ?? error);
 
 // --- Saved options ---------------------------------------------------------
 
@@ -103,6 +130,14 @@ function readOptions() {
   state.template = $("template").value;
 }
 
+/** Arguments shared by every render of a format: settings, logo and template. */
+function renderArguments(format) {
+  const settings = JSON.stringify({ ...state.settings, format: format.id });
+  const template =
+    state.useTemplate && state.templateTarget === format.family ? state.template : undefined;
+  return [settings, state.logo ?? undefined, template];
+}
+
 // --- Input -----------------------------------------------------------------
 
 /** Everything to convert: the chosen files plus the pasted text, if any. */
@@ -113,101 +148,205 @@ function inputs() {
 }
 
 function showInput() {
-  $("files").replaceChildren(
-    ...state.files.map((file, index) => {
-      const item = document.createElement("li");
-      const name = document.createElement("span");
-      name.textContent = file.name;
-      const remove = document.createElement("button");
-      remove.type = "button";
-      remove.textContent = "×";
-      remove.setAttribute("aria-label", `Quitar ${file.name}`);
-      remove.addEventListener("click", () => {
-        state.files.splice(index, 1);
-        showInput();
-      });
-      item.append(name, remove);
-      return item;
-    }),
-  );
+  const chips = state.files.slice(0, CHIPS_SHOWN).map((file, index) => {
+    const item = document.createElement("li");
+    const name = document.createElement("span");
+    name.textContent = file.name;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "×";
+    remove.setAttribute("aria-label", `Quitar ${file.name}`);
+    remove.addEventListener("click", () => {
+      state.files.splice(index, 1);
+      showInput();
+    });
+    item.append(name, remove);
+    return item;
+  });
+
+  if (state.files.length > CHIPS_SHOWN) {
+    const more = document.createElement("li");
+    more.className = "more";
+    more.textContent = `+${state.files.length - CHIPS_SHOWN} más`;
+    chips.push(more);
+  }
+  if (state.files.length > 1) {
+    const item = document.createElement("li");
+    const clear = document.createElement("button");
+    clear.type = "button";
+    clear.className = "clear";
+    clear.textContent = "Quitar todos";
+    clear.addEventListener("click", () => {
+      state.files = [];
+      showInput();
+    });
+    item.append(clear);
+    chips.push(item);
+  }
+
+  $("files").replaceChildren(...chips);
   $("convert").disabled = !ready || inputs().length === 0;
 }
 
+/** Adds files up to the batch limits and reports how many were left out. */
 async function addFiles(fileList) {
+  let bytes = state.files.reduce((total, file) => total + file.bytes.length, 0);
+  let skipped = 0;
   for (const file of Array.from(fileList)) {
+    if (state.files.length >= MAX_DOCUMENTS || bytes + file.size > MAX_TOTAL_BYTES) {
+      skipped += 1;
+      continue;
+    }
+    bytes += file.size;
     state.files.push({ name: file.name, bytes: new Uint8Array(await file.arrayBuffer()) });
   }
   showInput();
-  if (state.files.length > 0) setStatus("Archivo listo. Presiona Convertir.");
+
+  if (skipped > 0) {
+    setStatus(
+      `Se agregaron ${state.files.length} archivos; ${skipped} quedaron fuera por el límite de ` +
+        `${MAX_DOCUMENTS} comprobantes o ${MAX_TOTAL_BYTES / 1024 / 1024} MB por tanda.`,
+      true,
+    );
+  } else if (state.files.length > 0) {
+    setStatus(
+      state.files.length === 1
+        ? "Archivo listo. Presiona Convertir."
+        : `${state.files.length} archivos listos. Presiona Convertir.`,
+    );
+  }
 }
 
 // --- Conversion ------------------------------------------------------------
 
-function releaseDocuments() {
-  for (const document of state.documents) {
-    for (const file of Object.values(document.formats)) {
-      URL.revokeObjectURL(file.pdfUrl);
-      URL.revokeObjectURL(file.previewUrl);
-    }
+function releaseCurrent() {
+  for (const file of Object.values(state.current ?? {})) {
+    URL.revokeObjectURL(file.pdfUrl);
+    URL.revokeObjectURL(file.previewUrl);
   }
-  state.documents = [];
-  state.errors = [];
+  state.current = null;
+  state.renderError = "";
 }
 
-/** Converts one input into every format. Returns one entry per document it contains. */
-function convertInput(input) {
-  const documents = [];
-  for (const format of FORMATS) {
-    const settings = JSON.stringify({ ...state.settings, format: format.id });
-    const template =
-      state.useTemplate && state.templateTarget === format.family ? state.template : undefined;
-    const files = convert(input.name, input.bytes, settings, state.logo ?? undefined, template);
+/**
+ * Reads every input into the list of documents of the batch. ZIP files
+ * contribute one document per XML inside them. Nothing is rendered here, so
+ * a large batch stays cheap.
+ */
+function readDocuments() {
+  state.documents = [];
+  state.omitted = 0;
 
-    files.forEach((file, index) => {
-      documents[index] ??= { name: file.name.replace(/\.pdf$/, ""), formats: {} };
-      const blob = new Blob([file.pdf], { type: "application/pdf" });
+  for (const input of inputs()) {
+    let entries;
+    try {
+      entries = extract(input.name, input.bytes);
+    } catch (error) {
+      state.documents.push({ name: input.name, error: errorText(error) });
+      continue;
+    }
+    for (const entry of entries) {
+      if (state.documents.length >= MAX_DOCUMENTS) {
+        state.omitted += 1;
+      } else {
+        const item = { name: entry.name, bytes: entry.bytes };
+        try {
+          item.summary = JSON.parse(summary(item.bytes));
+        } catch (error) {
+          item.error = errorText(error);
+        }
+        state.documents.push(item);
+      }
+      entry.free();
+    }
+  }
+}
+
+/** Renders the selected document in every format, with previews. */
+function renderSelected() {
+  releaseCurrent();
+  const selected = state.documents[state.selected];
+  if (!selected?.summary) return;
+
+  const rendered = {};
+  try {
+    for (const format of FORMATS) {
+      const [file] = convert(selected.name, selected.bytes, ...renderArguments(format));
+      const blob = new Blob([file.pdf], { type: PDF_TYPE.mime });
       const preview = new Blob([file.preview], { type: "image/svg+xml" });
-      documents[index].formats[format.id] = {
-        fileName: `${documents[index].name}-${format.id}.pdf`,
+      rendered[format.id] = {
+        fileName: `${selected.summary.file_stem}-${format.id}.pdf`,
         blob,
         pdfUrl: URL.createObjectURL(blob),
         previewUrl: URL.createObjectURL(preview),
       };
       file.free();
-    });
+    }
+    state.current = rendered;
+  } catch (error) {
+    state.current = rendered;
+    releaseCurrent();
+    state.renderError = errorText(error);
   }
-  return documents;
 }
 
 function convertAll() {
-  const pending = inputs();
-  if (pending.length === 0) {
+  if (inputs().length === 0) {
     setStatus("Pega, arrastra o elige un XML primero.", true);
     return;
   }
-
-  releaseDocuments();
-  for (const input of pending) {
-    try {
-      state.documents.push(...convertInput(input));
-    } catch (error) {
-      state.errors.push({ name: input.name, message: String(error.message ?? error) });
-    }
-  }
-  state.selected = Math.min(state.selected, Math.max(state.documents.length - 1, 0));
+  readDocuments();
+  const firstValid = state.documents.findIndex((item) => item.summary);
+  state.selected = Math.max(firstValid, 0);
+  renderSelected();
   showResults();
 }
 
-/** Converts again after an option changes, when there is something on screen. */
+/** Renders again after an option changes, when there is something on screen. */
 function scheduleRender() {
   readOptions();
   saveOptions();
   if ($("resultado").hidden) return;
   clearTimeout(renderTimer);
-  renderTimer = setTimeout(convertAll, RENDER_DELAY_MS);
+  renderTimer = setTimeout(() => {
+    renderSelected();
+    showResults();
+  }, RENDER_DELAY_MS);
 }
 
 // --- Results ---------------------------------------------------------------
+
+function documentRow(item, index) {
+  const row = document.createElement("li");
+  const cells = (parent, values, lastClass) => {
+    values.forEach((value, position) => {
+      const cell = document.createElement(position === 0 ? "b" : "span");
+      cell.textContent = value;
+      if (lastClass && position === values.length - 1) cell.className = lastClass;
+      parent.append(cell);
+    });
+  };
+
+  if (item.error) {
+    const failed = document.createElement("div");
+    failed.className = "failed";
+    cells(failed, [item.name, item.error]);
+    row.append(failed);
+    return row;
+  }
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.setAttribute("aria-current", String(index === state.selected));
+  cells(button, [item.summary.id, item.summary.title, item.summary.customer, item.summary.total], "total");
+  button.addEventListener("click", () => {
+    state.selected = index;
+    renderSelected();
+    showResults();
+  });
+  row.append(button);
+  return row;
+}
 
 function formatCard(format, file) {
   const card = document.createElement("article");
@@ -237,7 +376,7 @@ function formatCard(format, file) {
   save.type = "button";
   save.className = "button save";
   save.textContent = "Guardar";
-  save.addEventListener("click", () => savePdf(file));
+  save.addEventListener("click", () => saveBlob(file.blob, file.fileName, PDF_TYPE));
   const print = document.createElement("button");
   print.type = "button";
   print.className = "button";
@@ -250,67 +389,102 @@ function formatCard(format, file) {
 }
 
 function showResults() {
-  const current = state.documents[state.selected];
+  const valid = state.documents.filter((item) => item.summary).length;
+  const failed = state.documents.length - valid;
+  const isBatch = state.documents.length > 1;
+  const selected = state.documents[state.selected];
 
-  $("documents").replaceChildren(
-    ...(state.documents.length > 1 ? state.documents : []).map((item, index) => {
-      const tab = document.createElement("button");
-      tab.type = "button";
-      tab.className = "pill";
-      tab.setAttribute("role", "tab");
-      tab.textContent = item.name;
-      tab.setAttribute("aria-selected", String(index === state.selected));
-      tab.addEventListener("click", () => {
-        state.selected = index;
-        showResults();
-      });
-      return tab;
-    }),
-  );
+  $("notice").hidden = state.omitted === 0;
+  $("notice").textContent =
+    `Se convirtieron los primeros ${MAX_DOCUMENTS} comprobantes; ${state.omitted} quedaron fuera ` +
+    "de esta tanda. Conviértelos en una tanda aparte.";
 
+  // A lone document that failed has no list, so its error is shown on its own.
+  const errors = [];
+  if (!isBatch && selected?.error) errors.push(`${selected.name}: ${selected.error}`);
+  if (state.renderError) errors.push(state.renderError);
   $("errors").replaceChildren(
-    ...state.errors.map((error) => {
+    ...errors.map((message) => {
       const item = document.createElement("li");
-      // Conversion errors already start with the name of the failing document.
-      const named = error.message.startsWith(`${error.name}:`);
-      item.textContent = named ? error.message : `${error.name}: ${error.message}`;
+      item.textContent = message;
       return item;
     }),
   );
 
+  $("batch").hidden = !isBatch;
+  $("documents").replaceChildren(...(isBatch ? state.documents.map(documentRow) : []));
+  $("save-all").disabled = saving || valid === 0;
+  $("results-title").textContent = isBatch ? `${valid} comprobantes` : "Elige tu formato";
+
   $("formats").replaceChildren(
-    ...(current ? FORMATS.map((format) => formatCard(format, current.formats[format.id])) : []),
+    ...(state.current ? FORMATS.map((format) => formatCard(format, state.current[format.id])) : []),
   );
   $("save-hint").textContent = window.showSaveFilePicker
     ? "Guardar te deja elegir la carpeta y el nombre del archivo."
-    : "En este navegador, Guardar descarga el PDF en tu carpeta de descargas. Chrome y Edge permiten elegir la carpeta.";
-  $("save-hint").hidden = !current;
+    : "En este navegador, Guardar descarga el archivo en tu carpeta de descargas. Chrome y Edge permiten elegir la carpeta.";
+  $("save-hint").hidden = !state.current;
   $("resultado").hidden = false;
 
-  const failed = state.errors.length;
-  if (state.documents.length === 0) {
+  if (valid === 0) {
     setStatus("No se pudo convertir. Revisa el detalle más abajo.", true);
-  } else if (failed > 0) {
-    setStatus(`${state.documents.length} comprobante(s) convertido(s), ${failed} con error.`, true);
+  } else if (failed > 0 || state.omitted > 0 || state.renderError) {
+    setStatus(`${valid} comprobante(s) listo(s); revisa los avisos más abajo.`, true);
+  } else if (isBatch) {
+    setStatus(`Listo: ${valid} comprobantes. Elige uno para verlo o guárdalos todos.`);
   } else {
-    setStatus(
-      state.documents.length === 1
-        ? "Listo: tu PDF está en los cuatro formatos."
-        : `Listo: ${state.documents.length} comprobantes en los cuatro formatos.`,
-    );
+    setStatus("Listo: tu PDF está en los cuatro formatos.");
   }
 }
 
-/** Saves a PDF, letting the user choose the location where the browser supports it. */
-async function savePdf(file) {
+/** Lets the page repaint between two documents of a batch. */
+const pause = () => new Promise((resolve) => setTimeout(resolve));
+
+/** Renders the whole batch in one format and saves it as a ZIP file. */
+async function saveAll() {
+  const format = FORMATS.find((item) => item.id === $("bulk-format").value);
+  const batch = state.documents.filter((item) => item.summary);
+  if (saving || batch.length === 0) return;
+
+  saving = true;
+  $("save-all").disabled = true;
+  const bundle = new ZipBundle();
+  let failures = 0;
+  try {
+    for (const [index, item] of batch.entries()) {
+      $("bulk-status").textContent = `Generando ${index + 1} de ${batch.length}…`;
+      await pause();
+      try {
+        bundle.add(`${item.summary.file_stem}.pdf`, renderPdf(item.bytes, ...renderArguments(format)));
+      } catch {
+        failures += 1;
+      }
+    }
+    const done = batch.length - failures;
+    if (done === 0) {
+      bundle.free();
+      $("bulk-status").textContent = "No se pudo generar ningún PDF en ese formato.";
+      return;
+    }
+    const zip = new Blob([bundle.finish()], { type: ZIP_TYPE.mime });
+    await saveBlob(zip, `comprobantes-${format.id}.zip`, ZIP_TYPE);
+    $("bulk-status").textContent =
+      failures === 0 ? `${done} PDF en el ZIP.` : `${done} PDF en el ZIP; ${failures} con error.`;
+  } finally {
+    saving = false;
+    $("save-all").disabled = false;
+  }
+}
+
+/** Saves a file, letting the user choose the location where the browser supports it. */
+async function saveBlob(blob, fileName, type) {
   if (window.showSaveFilePicker) {
     try {
       const handle = await window.showSaveFilePicker({
-        suggestedName: file.fileName,
-        types: [{ description: "PDF", accept: { "application/pdf": [".pdf"] } }],
+        suggestedName: fileName,
+        types: [{ description: type.description, accept: { [type.mime]: [type.extension] } }],
       });
       const writable = await handle.createWritable();
-      await writable.write(file.blob);
+      await writable.write(blob);
       await writable.close();
       setStatus(`Guardado: ${handle.name}`);
       return;
@@ -319,11 +493,14 @@ async function savePdf(file) {
       // Any other failure falls back to a regular download.
     }
   }
+  const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
-  link.href = file.pdfUrl;
-  link.download = file.fileName;
+  link.href = url;
+  link.download = fileName;
   link.click();
-  setStatus(`Descargado: ${file.fileName}`);
+  // The download has started by the next task; the URL is no longer needed.
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  setStatus(`Descargado: ${fileName}`);
 }
 
 /** Opens the print dialog for a PDF through a hidden frame. */
@@ -376,6 +553,7 @@ function bindEvents() {
     convertAll();
     $("resultado").scrollIntoView({ block: "start" });
   });
+  $("save-all").addEventListener("click", saveAll);
 
   for (const id of ["issuer-lines", "footer", "show-qr", "use-template", "template-target", "template"]) {
     $(id).addEventListener("input", scheduleRender);
@@ -405,7 +583,7 @@ async function main() {
   try {
     await init();
   } catch (error) {
-    setStatus(`No se pudo cargar el motor de conversión: ${error.message ?? error}`, true);
+    setStatus(`No se pudo cargar el motor de conversión: ${errorText(error)}`, true);
     return;
   }
   ready = true;

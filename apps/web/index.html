@@ -47,7 +47,7 @@
           <ul id="files" class="chips" aria-label="Archivos elegidos"></ul>
           <div class="input-row">
             <button id="pick" type="button" class="button outline">Seleccionar archivo</button>
-            <span class="hint">o arrastra aquí un XML o un ZIP</span>
+            <span class="hint">o arrastra aquí tus XML o un ZIP · hasta 100 comprobantes por tanda</span>
           </div>
           <input id="file-input" type="file" accept=".xml,.zip,text/xml,application/zip" multiple hidden />
         </div>
@@ -62,11 +62,25 @@
         <header class="results-head">
           <div>
             <p class="eyebrow">Resultado</p>
-            <h2>Elige tu formato</h2>
+            <h2 id="results-title">Elige tu formato</h2>
           </div>
-          <div id="documents" class="pills" role="tablist" aria-label="Comprobantes"></div>
         </header>
+        <p id="notice" class="notice" hidden></p>
         <ul id="errors" class="errors"></ul>
+        <div id="batch" class="batch" hidden>
+          <ul id="documents" class="doc-list" aria-label="Comprobantes de la tanda"></ul>
+          <div class="bulk">
+            <label for="bulk-format">Guardar todos en</label>
+            <select id="bulk-format">
+              <option value="a4">A4</option>
+              <option value="a5">A5</option>
+              <option value="ticket80">Ticket 80 mm</option>
+              <option value="ticket58">Ticket 58 mm</option>
+            </select>
+            <button id="save-all" type="button" class="button dark">Guardar todos (ZIP)</button>
+            <span id="bulk-status" class="hint" role="status"></span>
+          </div>
+        </div>
         <div id="formats" class="formats"></div>
         <p id="save-hint" class="hint"></p>
       </section>

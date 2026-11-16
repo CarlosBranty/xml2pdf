@@ -22,6 +22,8 @@ xml2pdf convert descargas/ -o pdf/ -f ticket80
 
 En la web: pega el contenido del XML, arrástralo o elige el archivo; presiona **Convertir** y verás la vista previa en los cuatro formatos, cada una con **Guardar** e **Imprimir**. En Chrome y Edge, Guardar deja elegir la carpeta; en otros navegadores descarga el archivo.
 
+También puedes convertir por lotes: elige o arrastra varios XML (o un ZIP) y usa **Guardar todos** para descargar un ZIP con todos los PDF en el formato que elijas. Cada tanda admite hasta 100 comprobantes y 50 MB; lo que exceda se omite con un aviso.
+
 Comprobantes admitidos: factura (01), boleta de venta (03), nota de crédito (07) y nota de débito (08). La entrada puede ser un XML (UTF-8 o ISO-8859-1) o un ZIP con varios; los archivos de respuesta de SUNAT (`R-…xml`) se omiten.
 
 ## Formatos y personalización
@@ -71,6 +73,7 @@ Requiere Rust estable.
 |----------|---------|------------------------|
 | Pruebas | `cargo test` | — |
 | Web | `./scripts/build-web.sh` (genera `dist/web`) | target `wasm32-unknown-unknown` y `wasm-bindgen-cli` de la misma versión que en `Cargo.lock` |
+| Prueba de la web en navegador | `python3 scripts/ui-check.py` (tras compilar la web) | Firefox |
 | Escritorio | `cd apps/desktop && npm install && npm run build` | [Dependencias de Tauri 2](https://tauri.app/start/prerequisites/) |
 
 ## Desplegar la web en Dokploy

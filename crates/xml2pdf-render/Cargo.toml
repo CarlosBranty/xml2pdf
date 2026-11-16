@@ -14,6 +14,7 @@ thiserror.workspace = true
 typst.workspace = true
 typst-pdf.workspace = true
 typst-layout.workspace = true
+typst-svg.workspace = true
 qrcode.workspace = true
 
 [dev-dependencies]

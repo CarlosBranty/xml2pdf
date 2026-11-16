@@ -6891,6 +6891,7 @@ dependencies = [
  "typst",
  "typst-layout",
  "typst-pdf",
+ "typst-svg",
  "xml2pdf-core",
 ]
 

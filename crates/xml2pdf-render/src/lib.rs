@@ -14,8 +14,10 @@ use std::fmt;
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
+use typst::layout::Abs;
 use typst_layout::PagedDocument;
 use typst_pdf::PdfOptions;
+use typst_svg::SvgOptions;
 use xml2pdf_core::{ArchiveError, Document, ParseError};
 
 pub use view::template_data;
@@ -192,6 +194,8 @@ pub struct Rendered {
     pub pdf: Vec<u8>,
     /// Width and height of the first page, in millimetres.
     pub page_mm: (f64, f64),
+    /// Every page drawn as one SVG image, when a preview was requested.
+    pub preview_svg: Option<String>,
 }
 
 /// Converts an input file, either an XML document or a ZIP archive holding
@@ -201,6 +205,25 @@ pub fn convert(
     bytes: &[u8],
     options: &RenderOptions,
 ) -> Result<Vec<Rendered>, ConvertError> {
+    convert_each(name, bytes, options, false)
+}
+
+/// Like [`convert`], and also draws each document as an SVG image so a user
+/// interface can show it without a PDF viewer.
+pub fn convert_with_preview(
+    name: &str,
+    bytes: &[u8],
+    options: &RenderOptions,
+) -> Result<Vec<Rendered>, ConvertError> {
+    convert_each(name, bytes, options, true)
+}
+
+fn convert_each(
+    name: &str,
+    bytes: &[u8],
+    options: &RenderOptions,
+    with_preview: bool,
+) -> Result<Vec<Rendered>, ConvertError> {
     xml2pdf_core::xml_sources(name, bytes)?
         .into_iter()
         .map(|source| {
@@ -209,16 +232,17 @@ pub fn convert(
                     name: source.name.clone(),
                     source: err,
                 })?;
-            let (pdf, page_mm) =
-                render_sized(&document, options).map_err(|err| ConvertError::Render {
+            let output =
+                compile(&document, options, with_preview).map_err(|err| ConvertError::Render {
                     name: source.name.clone(),
                     source: err,
                 })?;
             Ok(Rendered {
                 source_name: source.name,
                 file_stem: document.file_stem(),
-                pdf,
-                page_mm,
+                pdf: output.pdf,
+                page_mm: output.page_mm,
+                preview_svg: output.preview_svg,
             })
         })
         .collect()
@@ -235,15 +259,26 @@ pub fn builtin_template(format: PaperFormat) -> &'static str {
 
 /// Renders a document to PDF bytes.
 pub fn render(document: &Document, options: &RenderOptions) -> Result<Vec<u8>, RenderError> {
-    render_sized(document, options).map(|(pdf, _)| pdf)
+    compile(document, options, false).map(|output| output.pdf)
 }
 
-/// Renders a document and also returns the size of its first page in
-/// millimetres, which printing needs for continuous ticket paper.
-fn render_sized(
+/// Result of compiling one document.
+struct Output {
+    pdf: Vec<u8>,
+    /// Size of the first page in millimetres, which printing needs for
+    /// continuous ticket paper.
+    page_mm: (f64, f64),
+    preview_svg: Option<String>,
+}
+
+/// Gap between pages in the SVG preview.
+const PREVIEW_PAGE_GAP_PT: f64 = 12.0;
+
+fn compile(
     document: &Document,
     options: &RenderOptions,
-) -> Result<(Vec<u8>, (f64, f64)), RenderError> {
+    with_preview: bool,
+) -> Result<Output, RenderError> {
     let data = template_data(document, options);
     let mut files = vec![("data.json".to_owned(), data.to_string().into_bytes())];
     if options.settings.show_qr {
@@ -279,8 +314,15 @@ fn render_sized(
         .map(|page| page.frame.size())
         .map(|size| (size.x.to_mm(), size.y.to_mm()))
         .unwrap_or_default();
+    let preview_svg = with_preview.then(|| {
+        typst_svg::svg_merged(&paged, &SvgOptions::default(), Abs::pt(PREVIEW_PAGE_GAP_PT))
+    });
     let pdf = typst_pdf::pdf(&paged, &PdfOptions::default()).map_err(|err| describe(&err))?;
-    Ok((pdf, page_mm))
+    Ok(Output {
+        pdf,
+        page_mm,
+        preview_svg,
+    })
 }
 
 fn qr_svg(payload: &str) -> Result<String, RenderError> {

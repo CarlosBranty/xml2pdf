@@ -6,7 +6,7 @@ use rust_decimal::Decimal;
 use xml2pdf_core::parse_bytes;
 use xml2pdf_render::{
     ConvertError, Logo, PaperFormat, RenderError, RenderOptions, Settings, builtin_template,
-    config, convert, format, render, template_data,
+    config, convert, convert_with_preview, format, render, template_data,
 };
 
 const FIXTURES: [&str; 4] = [
@@ -447,4 +447,33 @@ fn rejects_invalid_configuration_files() {
         .to_string();
     assert!(missing_logo.contains("nope.png"), "{missing_logo}");
     assert!(config::load(&folder.path().join("missing.json")).is_err());
+}
+
+#[test]
+fn offers_an_svg_preview_next_to_the_pdf() {
+    let source = fixture("documentos.zip");
+
+    let previews =
+        convert_with_preview("documentos.zip", &source, &options(PaperFormat::Ticket80)).unwrap();
+    assert_eq!(previews.len(), 2);
+    for file in &previews {
+        let svg = file.preview_svg.as_deref().expect("a preview is rendered");
+        assert!(
+            svg.starts_with("<svg"),
+            "unexpected preview: {}",
+            &svg[..svg.len().min(60)]
+        );
+        assert!(file.pdf.starts_with(b"%PDF-"));
+    }
+
+    let plain = convert("documentos.zip", &source, &options(PaperFormat::Ticket80)).unwrap();
+    assert!(
+        plain.iter().all(|file| file.preview_svg.is_none()),
+        "previews are rendered only on request"
+    );
+    assert_eq!(
+        plain[0].pdf.len(),
+        previews[0].pdf.len(),
+        "the PDF is the same with or without preview"
+    );
 }

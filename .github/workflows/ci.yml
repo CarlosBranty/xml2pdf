@@ -73,7 +73,7 @@ jobs:
             echo "::notice::Dokploy secrets are not configured; skipping the deployment."
             exit 0
           fi
-          curl --fail-with-body --silent --show-error --request POST \
+          curl --fail-with-body --silent --show-error --max-time 60 --request POST \
             "${DOKPLOY_URL%/}/api/application.deploy" \
             --header "accept: application/json" \
             --header "content-type: application/json" \

@@ -21,7 +21,7 @@ Test runner: `cargo test --workspace` (tests are written last by explicit user i
 - [x] **T3** (S1, S5) CLI `xml2pdf` in `crates/xml2pdf-cli`: single file, batch, ZIP input, config and custom template. Route: inline. Commit: d947fd5.
 - [x] **T4** (S3, S5) Web: `crates/xml2pdf-wasm` bindings and static UI in `apps/web`. Route: inline. Commit: 6b9f95a.
 - [x] **T5** (S4) Desktop: Tauri 2 app in `apps/desktop` with folder watcher and auto-print; shared logic in `crates/xml2pdf-auto`, also exposed as `xml2pdf watch` and `xml2pdf printers`. Route: inline. Commit: fea32cf.
-- [x] **T6** (S6) Deploy: `deploy/Dockerfile`, Caddy config, compose file, GitHub Actions CI and release workflows. Route: inline. Commit: 7db6ffb.
+- [x] **T6** (S6) Deploy: `Dockerfile`, Caddy config (`deploy/Caddyfile`), compose file, GitHub Actions CI and release workflows. Route: inline. Commit: 7db6ffb.
 - [x] **T7** (S7) Tests for parser, renderer, CLI and desktop logic; README and docs. Route: inline. Commit: 5067815.
 
 Route evidence: no writer is delegated. The units share `Cargo.toml`, `Cargo.lock` and one `target` directory, T4 and T5 depend on the T1/T2 API, and the WASM toolchain needs a parent-owned system install.
@@ -40,3 +40,4 @@ Route evidence: no writer is delegated. The units share `Cargo.toml`, `Cargo.loc
 - **L10** (2026-11-16, evidence) T7: `cargo test --workspace --locked`: 55 passed, 0 failed (core 12, render 16, auto 13 + 4 unit, cli 10). `cargo clippy --workspace --all-targets --locked -- -D warnings` clean. Tests were written after the code (S7), so no RED run was observed.
 - **L11** (2026-11-16, decision) UI copy and README are in Spanish because the audience is SUNAT taxpayers; code, comments and commits stay in English.
 - **L12** (2026-11-16, risk) Risk: item 5 (CI, Docker image and deploy trigger are new and could not be run locally). Independent verification requested for T6.
+- **L13** (2026-11-16, verification) Independent verifier on T6 / S6: pass, no blockers. It ran `caddy validate` (valid), `actionlint` (0 errors), the `.dockerignore` against the workspace members, the gzip step, and loaded the built site behind that Caddyfile in Chromium and Firefox (conversion works, no CSP violations). Not executed anywhere: `docker build`, GitHub runners, a live Dokploy call, Windows and macOS builds. Applied advisories: `frame-ancestors 'none'`, `--max-time` on the deploy call, README note about disabling Dokploy Auto Deploy and about the heavy server-side build. Open advisories: build the image in CI and pull from a registry instead of building on the Dokploy host; create the GitHub release in one job before the matrix uploads.

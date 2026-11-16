@@ -77,7 +77,9 @@ Requiere Rust estable.
 
 1. Crea una aplicación en Dokploy con este repositorio, tipo de build **Dockerfile** (ruta `./Dockerfile`).
 2. Añade un dominio apuntando al puerto **80** del contenedor.
-3. Para desplegar desde CI, define en GitHub los secretos `DOKPLOY_URL`, `DOKPLOY_API_KEY` y `DOKPLOY_APPLICATION_ID`. El workflow `CI` despliega cada push a `main` después de pasar las pruebas; sin esos secretos, el paso se omite.
+3. Para desplegar desde CI, define en GitHub los secretos `DOKPLOY_URL`, `DOKPLOY_API_KEY` y `DOKPLOY_APPLICATION_ID`. El workflow `CI` despliega cada push a `main` después de pasar las pruebas; sin esos secretos, el paso se omite. En ese caso desactiva **Auto Deploy** en Dokploy, o cada push se desplegará dos veces (una antes de que termine el CI).
+
+La imagen compila el motor WebAssembly en el servidor: el primer build tarda varios minutos y consume bastante memoria.
 
 Para probar la imagen en local: `docker compose up --build` y abre <http://localhost:8080>.
 

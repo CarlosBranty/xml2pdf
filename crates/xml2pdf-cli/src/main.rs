@@ -2,8 +2,10 @@
 
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use std::sync::Arc;
 
 use clap::{Args, Parser, Subcommand};
+use xml2pdf_auto::{AutoConfig, Printer, SystemPrinter, WatchEvent};
 use xml2pdf_render::{PaperFormat, RenderOptions, config};
 
 #[derive(Parser)]
@@ -34,6 +36,30 @@ enum Command {
         #[command(flatten)]
         style: StyleArgs,
     },
+    /// Watch a folder and convert, and optionally print, every new XML or ZIP
+    Watch(WatchArgs),
+    /// List the printers available on this computer
+    Printers,
+}
+
+#[derive(Args)]
+struct WatchArgs {
+    /// Folder to watch
+    dir: PathBuf,
+    /// Folder for the PDFs. Defaults to `pdf` inside the watched folder
+    #[arg(short, long)]
+    output: Option<PathBuf>,
+    /// Print every generated PDF
+    #[arg(long)]
+    print: bool,
+    /// Printer name. Defaults to the system default printer
+    #[arg(long, requires = "print")]
+    printer: Option<String>,
+    /// Number of printed copies
+    #[arg(long, requires = "print", default_value_t = 1, value_parser = clap::value_parser!(u32).range(1..=20))]
+    copies: u32,
+    #[command(flatten)]
+    style: StyleArgs,
 }
 
 #[derive(Args)]
@@ -111,6 +137,8 @@ fn main() -> ExitCode {
             Ok(())
         }
         Command::Data { input, style } => data(&input, &style),
+        Command::Watch(args) => watch_folder(&args),
+        Command::Printers => printers(),
     };
 
     match result {
@@ -218,6 +246,46 @@ fn data(input: &Path, style: &StyleArgs) -> Result<(), String> {
             serde_json::to_string_pretty(&data).map_err(|err| err.to_string())?
         );
     }
+    Ok(())
+}
+
+/// Watches a folder until the process is interrupted.
+fn watch_folder(args: &WatchArgs) -> Result<(), String> {
+    let options = args.style.options()?;
+    let config = AutoConfig {
+        watch_dir: Some(args.dir.clone()),
+        output_dir: args.output.clone(),
+        print: args.print,
+        printer: args.printer.clone(),
+        copies: args.copies,
+        settings: options.settings.clone(),
+        ..AutoConfig::default()
+    };
+
+    let _watcher = xml2pdf_auto::watch(config, options, Arc::new(SystemPrinter), report)
+        .map_err(|err| err.to_string())?;
+    eprintln!("Watching {} (Ctrl+C to stop)", args.dir.display());
+    loop {
+        std::thread::park();
+    }
+}
+
+fn report(event: WatchEvent) {
+    match event {
+        WatchEvent::Processed(item) => match (item.printed, item.print_error) {
+            (_, Some(error)) => eprintln!("error: {}: not printed: {error}", item.pdf.display()),
+            (true, None) => println!("{} (printed)", item.pdf.display()),
+            (false, None) => println!("{}", item.pdf.display()),
+        },
+        WatchEvent::Failed { source, message } => {
+            eprintln!("error: {}: {message}", source.display())
+        }
+    }
+}
+
+fn printers() -> Result<(), String> {
+    let names = SystemPrinter.list().map_err(|err| err.to_string())?;
+    names.iter().for_each(|name| println!("{name}"));
     Ok(())
 }
 

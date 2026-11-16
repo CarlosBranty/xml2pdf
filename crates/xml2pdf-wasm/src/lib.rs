@@ -42,7 +42,10 @@ pub fn convert(
     let rendered = xml2pdf_render::convert(name, bytes, &options)?;
     Ok(rendered
         .into_iter()
-        .map(|file| PdfFile { name: format!("{}.pdf", file.file_stem), pdf: file.pdf })
+        .map(|file| PdfFile {
+            name: format!("{}.pdf", file.file_stem),
+            pdf: file.pdf,
+        })
         .collect())
 }
 
@@ -52,7 +55,9 @@ pub fn template_data(name: &str, bytes: &[u8], settings: &str) -> Result<String,
     let options = options(settings, None, None)?;
     let source = xml2pdf_core::xml_sources(name, bytes)?.swap_remove(0);
     let document = xml2pdf_core::parse_bytes(&source.bytes)?;
-    Ok(serde_json::to_string_pretty(&xml2pdf_render::template_data(&document, &options))?)
+    Ok(serde_json::to_string_pretty(
+        &xml2pdf_render::template_data(&document, &options),
+    )?)
 }
 
 /// Returns the built-in Typst template of a format (`a4`, `a5`, `ticket80`, `ticket58`).
@@ -74,7 +79,10 @@ fn options(
 ) -> Result<RenderOptions, JsError> {
     Ok(RenderOptions {
         settings: Settings::from_json(settings)?,
-        logo: logo.filter(|bytes| !bytes.is_empty()).map(Logo::from_bytes).transpose()?,
+        logo: logo
+            .filter(|bytes| !bytes.is_empty())
+            .map(Logo::from_bytes)
+            .transpose()?,
         template: template.filter(|source| !source.trim().is_empty()),
     })
 }

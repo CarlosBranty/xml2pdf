@@ -13,5 +13,6 @@ path = "src/main.rs"
 [dependencies]
 xml2pdf-core.workspace = true
 xml2pdf-render.workspace = true
+xml2pdf-auto.workspace = true
 clap.workspace = true
 serde_json.workspace = true

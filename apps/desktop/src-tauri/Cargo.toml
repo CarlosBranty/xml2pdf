@@ -1,0 +1,16 @@
+[package]
+name = "xml2pdf-desktop"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Desktop app that converts and prints SUNAT XML documents automatically"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+xml2pdf-auto.workspace = true
+serde.workspace = true
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"

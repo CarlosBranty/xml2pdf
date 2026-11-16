@@ -5,11 +5,14 @@ members = [
     "crates/xml2pdf-render",
     "crates/xml2pdf-cli",
     "crates/xml2pdf-wasm",
+    "crates/xml2pdf-auto",
+    "apps/desktop/src-tauri",
 ]
 default-members = [
     "crates/xml2pdf-core",
     "crates/xml2pdf-render",
     "crates/xml2pdf-cli",
+    "crates/xml2pdf-auto",
 ]
 
 [workspace.package]
@@ -22,6 +25,7 @@ description = "Convert SUNAT electronic documents (UBL 2.1 XML) into printable P
 [workspace.dependencies]
 xml2pdf-core = { path = "crates/xml2pdf-core" }
 xml2pdf-render = { path = "crates/xml2pdf-render" }
+xml2pdf-auto = { path = "crates/xml2pdf-auto" }
 roxmltree = "0.21"
 rust_decimal = { version = "1", default-features = false, features = ["std", "serde-str"] }
 serde = { version = "1", features = ["derive"] }
@@ -33,6 +37,7 @@ typst-pdf = "0.15"
 typst-layout = "0.15"
 clap = { version = "4", features = ["derive"] }
 wasm-bindgen = "0.2"
+notify = "8"
 qrcode = { version = "0.14", default-features = false, features = ["svg"] }
 
 # Smaller WebAssembly binary for the web app.

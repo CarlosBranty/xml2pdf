@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>xml2pdf</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>xml2pdf</h1>
+        <p id="watch-state">Vigilancia detenida</p>
+      </div>
+      <div class="actions">
+        <button id="convert" type="button" class="ghost">Convertir archivos…</button>
+        <button id="toggle-watch" type="button">Iniciar vigilancia</button>
+      </div>
+    </header>
+
+    <p id="message" class="message" role="status" hidden></p>
+
+    <main class="layout">
+      <section class="panel">
+        <h2>Carpetas</h2>
+        <div class="field">
+          <label>Carpeta vigilada (donde descargas los XML)</label>
+          <div class="inline">
+            <output id="watch-dir" class="path">Sin elegir</output>
+            <button id="pick-watch-dir" type="button" class="ghost">Elegir…</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Carpeta de los PDF</label>
+          <div class="inline">
+            <output id="output-dir" class="path"></output>
+            <button id="pick-output-dir" type="button" class="ghost">Elegir…</button>
+            <button id="reset-output-dir" type="button" class="ghost">Predeterminada</button>
+          </div>
+        </div>
+        <label class="check"><input id="watch-on-start" type="checkbox" /> Iniciar la vigilancia al abrir la aplicación</label>
+
+        <h2>Impresión</h2>
+        <label class="check"><input id="print" type="checkbox" /> Imprimir automáticamente cada comprobante</label>
+        <div class="field">
+          <label for="printer">Impresora</label>
+          <select id="printer"></select>
+          <small id="printer-error" class="error" hidden></small>
+        </div>
+        <div class="field">
+          <label for="copies">Copias</label>
+          <input id="copies" type="number" min="1" max="20" step="1" />
+        </div>
+
+        <h2>Formato</h2>
+        <div class="field">
+          <label for="format">Tamaño de papel</label>
+          <select id="format">
+            <option value="a4">A4</option>
+            <option value="a5">A5</option>
+            <option value="ticket80">Ticket 80 mm</option>
+            <option value="ticket58">Ticket 58 mm</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="accent">Color principal</label>
+          <input id="accent" type="color" />
+        </div>
+        <div class="field">
+          <label>Logo</label>
+          <div class="inline">
+            <output id="logo" class="path">Sin logo</output>
+            <button id="pick-logo" type="button" class="ghost">Elegir…</button>
+            <button id="reset-logo" type="button" class="ghost">Quitar</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="issuer-lines">Datos adicionales del emisor</label>
+          <textarea id="issuer-lines" rows="3" placeholder="Una línea por dato: teléfono, correo, web…"></textarea>
+        </div>
+        <div class="field">
+          <label for="footer">Texto al pie</label>
+          <input id="footer" type="text" />
+        </div>
+        <label class="check"><input id="show-qr" type="checkbox" /> Mostrar código QR</label>
+        <div class="field">
+          <label>Plantilla personalizada (archivo Typst)</label>
+          <div class="inline">
+            <output id="template" class="path">Plantilla integrada</output>
+            <button id="pick-template" type="button" class="ghost">Elegir…</button>
+            <button id="reset-template" type="button" class="ghost">Quitar</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Registro</h2>
+        <ul id="log" class="log" aria-live="polite"></ul>
+        <p id="log-empty" class="hint">Aquí aparecerán los comprobantes convertidos.</p>
+      </section>
+    </main>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

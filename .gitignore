@@ -1,0 +1,10 @@
+/target
+**/target
+/apps/web/pkg
+/apps/desktop/gen
+node_modules
+dist
+*.pdf
+!/docs/**/*.pdf
+.codegraph
+.DS_Store

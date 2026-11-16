@@ -32,7 +32,15 @@ typst = "0.15"
 typst-pdf = "0.15"
 typst-layout = "0.15"
 clap = { version = "4", features = ["derive"] }
+wasm-bindgen = "0.2"
 qrcode = { version = "0.14", default-features = false, features = ["svg"] }
+
+# Smaller WebAssembly binary for the web app.
+[profile.wasm-release]
+inherits = "release"
+opt-level = "z"
+# wasm-bindgen reads the `target_features` section, which a full strip removes.
+strip = "debuginfo"
 
 [profile.release]
 lto = true

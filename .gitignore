@@ -8,3 +8,4 @@ dist
 !/docs/**/*.pdf
 .codegraph
 .DS_Store
+.atl/

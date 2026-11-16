@@ -16,9 +16,9 @@ Test runner: `cargo test --workspace` (tests are written last by explicit user i
 
 ## Tasks
 
-- [ ] **T1** (S1, S2) Workspace scaffold, domain model and UBL parser in `crates/xml2pdf-core`. Route: inline. Commit: pending.
-- [ ] **T2** (S1, S5) PDF rendering in `crates/xml2pdf-render`: Typst world, built-in templates for the four formats, QR, render config. Route: inline. Commit: pending.
-- [ ] **T3** (S1, S5) CLI `xml2pdf` in `crates/xml2pdf-cli`: single file, batch, ZIP input, config and custom template. Route: inline. Commit: pending.
+- [x] **T1** (S1, S2) Workspace scaffold, domain model and UBL parser in `crates/xml2pdf-core`. Route: inline. Commit: 51b2e95.
+- [x] **T2** (S1, S5) PDF rendering in `crates/xml2pdf-render`: Typst world, built-in templates for the four formats, QR, render config. Route: inline. Commit: c32b67f.
+- [x] **T3** (S1, S5) CLI `xml2pdf` in `crates/xml2pdf-cli`: single file, batch, ZIP input, config and custom template. Route: inline. Commit: d947fd5.
 - [ ] **T4** (S3, S5) Web: `crates/xml2pdf-wasm` bindings and static UI in `apps/web`. Route: inline. Commit: pending.
 - [ ] **T5** (S4) Desktop: Tauri 2 app in `apps/desktop` with folder watcher and auto-print. Route: inline. Commit: pending.
 - [ ] **T6** (S6) Deploy: `deploy/Dockerfile`, Caddy config, compose file, GitHub Actions CI and release workflows. Route: inline. Commit: pending.
@@ -32,3 +32,5 @@ Route evidence: no writer is delegated. The units share `Cargo.toml`, `Cargo.loc
 - **L2** (2026-11-16, user, verbatim) "No hazlo todo completo primero planifica las pruebas para el final por que haremos todo de una pasada"
 - **L3** (2026-11-16, decision) Stack: Rust core, Typst as the PDF engine, `roxmltree` for XML (tree navigation with namespaces; replaces the earlier `quick-xml` suggestion), wasm-bindgen for web, Tauri 2 for desktop, Caddy static container for Dokploy. License: MIT (default, open to change).
 - **L4** (2026-11-16, environment) Local machine: Rust 1.99.1 without the wasm32 target (`rust-wasm` package needs sudo; three sudo attempts failed, the user will install it), no Docker/Podman, no CUPS (`lp`). Consequence: the WASM build, the Docker image and real printing cannot be verified locally until those exist. RDD is off (global).
+- **L5** (2026-11-16, evidence) T1-T3: the CLI converted every fixture (factura, ISO-8859-1 boleta, credit note, USD debit note, ZIP with a CDR entry skipped) in A4, A5, ticket80 and ticket58; A4, A5 and both ticket layouts were inspected as rendered images. `cargo clippy` clean.
+- **L6** (2026-11-16, environment) The user installed `rust-wasm`; the wasm32 target is available. `wasm-bindgen-cli` 0.2.130 is installed project-locally in `target/tools`.

@@ -3306,6 +3306,12 @@ dependencies = [
 [[package]]
 name = "xml2pdf-wasm"
 version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "wasm-bindgen",
+ "xml2pdf-core",
+ "xml2pdf-render",
+]
 
 [[package]]
 name = "xmlwriter"

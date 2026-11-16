@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Convierte comprobantes electrónicos SUNAT (XML) a PDF imprimible, sin subir tus archivos a ningún servidor." />
+    <title>xml2pdf · XML SUNAT a PDF</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <h1>xml2pdf</h1>
+      <p>Comprobantes electrónicos SUNAT (XML) a PDF imprimible. Todo se procesa en tu navegador: tus archivos no se suben a ningún servidor.</p>
+    </header>
+
+    <main class="layout">
+      <section class="panel" aria-label="Archivos y configuración">
+        <label id="dropzone" class="dropzone" for="file-input">
+          <strong>Arrastra aquí tus XML o ZIP</strong>
+          <span>o haz clic para elegirlos</span>
+          <input id="file-input" type="file" accept=".xml,.zip,text/xml,application/zip" multiple hidden />
+        </label>
+
+        <ul id="results" class="results" aria-live="polite"></ul>
+        <div class="actions">
+          <button id="download-all" type="button" disabled>Descargar todos</button>
+          <button id="clear" type="button" class="ghost" disabled>Limpiar</button>
+        </div>
+
+        <h2>Formato</h2>
+        <div class="field">
+          <label for="format">Tamaño de papel</label>
+          <select id="format">
+            <option value="a4">A4</option>
+            <option value="a5">A5</option>
+            <option value="ticket80">Ticket 80 mm</option>
+            <option value="ticket58">Ticket 58 mm</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="accent">Color principal</label>
+          <input id="accent" type="color" />
+        </div>
+        <div class="field">
+          <label for="logo">Logo</label>
+          <div class="inline">
+            <input id="logo" type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml" />
+            <button id="logo-remove" type="button" class="ghost" hidden>Quitar</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="issuer-lines">Datos adicionales del emisor</label>
+          <textarea id="issuer-lines" rows="3" placeholder="Una línea por dato: teléfono, correo, web…"></textarea>
+        </div>
+        <div class="field">
+          <label for="footer">Texto al pie</label>
+          <input id="footer" type="text" placeholder="Gracias por su preferencia" />
+        </div>
+        <label class="check"><input id="show-qr" type="checkbox" /> Mostrar código QR</label>
+
+        <details id="template-section">
+          <summary>Plantilla personalizada (Typst)</summary>
+          <p class="hint">Edita el diseño del PDF. Los datos del comprobante llegan en <code>data.json</code>.</p>
+          <label class="check"><input id="use-template" type="checkbox" /> Usar esta plantilla en lugar de la integrada</label>
+          <textarea id="template" rows="14" spellcheck="false" aria-label="Plantilla Typst"></textarea>
+          <div class="actions">
+            <button id="template-load" type="button" class="ghost">Cargar plantilla integrada</button>
+          </div>
+        </details>
+      </section>
+
+      <section class="preview" aria-label="Vista previa">
+        <div class="preview-bar">
+          <span id="status" role="status">Cargando motor…</span>
+          <button id="print" type="button" disabled>Imprimir</button>
+        </div>
+        <iframe id="preview" title="Vista previa del PDF"></iframe>
+        <p id="empty" class="empty">Agrega un XML para ver aquí la vista previa.</p>
+      </section>
+    </main>
+
+    <footer class="footnote">
+      Software libre bajo licencia MIT. El PDF es una representación impresa; el comprobante válido es el XML.
+    </footer>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

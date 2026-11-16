@@ -20,7 +20,11 @@ const fixture = (name) => readFileSync(`${fixtures}/${name}`);
 function convert(name, overrides = {}, template) {
   const settings = JSON.stringify({ ...defaults, ...overrides });
   return wasm.convert(name, fixture(name), settings, undefined, template).map((file) => {
-    const result = { name: file.name, header: String.fromCharCode(...file.pdf.slice(0, 5)) };
+    const result = {
+      name: file.name,
+      header: String.fromCharCode(...file.pdf.slice(0, 5)),
+      preview: file.preview,
+    };
     file.free();
     return result;
   });
@@ -37,7 +41,10 @@ const cases = [
 for (const [name, format, expected] of cases) {
   const files = convert(name, { format });
   assert.deepEqual(files.map((file) => file.name), expected, `${name}: file names`);
-  for (const file of files) assert.equal(file.header, "%PDF-", `${name}: PDF header`);
+  for (const file of files) {
+    assert.equal(file.header, "%PDF-", `${name}: PDF header`);
+    assert.ok(file.preview.startsWith("<svg"), `${name}: SVG preview`);
+  }
   console.log(`ok ${name} (${format}) -> ${expected.join(", ")}`);
 }
 

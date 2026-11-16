@@ -9,6 +9,7 @@ use xml2pdf_render::{Logo, PaperFormat, RenderOptions, Settings};
 pub struct PdfFile {
     name: String,
     pdf: Vec<u8>,
+    preview: String,
 }
 
 #[wasm_bindgen]
@@ -23,6 +24,12 @@ impl PdfFile {
     #[wasm_bindgen(getter)]
     pub fn pdf(&self) -> Vec<u8> {
         self.pdf.clone()
+    }
+
+    /// The document drawn as an SVG image, to show it without a PDF viewer.
+    #[wasm_bindgen(getter)]
+    pub fn preview(&self) -> String {
+        self.preview.clone()
     }
 }
 
@@ -39,12 +46,13 @@ pub fn convert(
     template: Option<String>,
 ) -> Result<Vec<PdfFile>, JsError> {
     let options = options(settings, logo, template)?;
-    let rendered = xml2pdf_render::convert(name, bytes, &options)?;
+    let rendered = xml2pdf_render::convert_with_preview(name, bytes, &options)?;
     Ok(rendered
         .into_iter()
         .map(|file| PdfFile {
             name: format!("{}.pdf", file.file_stem),
             pdf: file.pdf,
+            preview: file.preview_svg.unwrap_or_default(),
         })
         .collect())
 }

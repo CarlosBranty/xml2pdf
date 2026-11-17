@@ -328,7 +328,8 @@ button.pill {
 
 .card.hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  /* Input on the left, headline and Convertir on the right. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
   padding: 0;
   overflow: hidden;
   background: var(--pink);
@@ -336,7 +337,8 @@ button.pill {
 
 .hero-copy {
   position: relative;
-  z-index: 1;
+  /* Above the decorative shapes, so they never cover the text. */
+  z-index: 2;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -358,6 +360,7 @@ button.pill {
   min-height: 1.45em;
   font-size: 14px;
   color: var(--muted);
+  overflow-wrap: anywhere;
 }
 
 .status.error {
@@ -372,7 +375,8 @@ button.pill {
   flex-direction: column;
   gap: 12px;
   padding: clamp(22px, 3vw, 40px);
-  border-left: var(--line);
+  order: -1;
+  border-right: var(--line);
   background-color: var(--white);
   background-image: radial-gradient(var(--ink) 1px, transparent 1.4px);
   background-size: 22px 22px;
@@ -468,21 +472,21 @@ button.pill {
   pointer-events: none;
 }
 
-/* The shapes sit in the free corner of the pink side, pointing at the input. */
+/* The shapes sit in the free corner of the pink side, behind its text. */
 .decor.blob {
-  bottom: 9%;
-  left: 40%;
+  right: 3%;
+  bottom: 8%;
   width: 13%;
   aspect-ratio: 2 / 1;
   border-radius: 999px;
   background: linear-gradient(160deg, #f4a8b8 18%, #7fb7ee 55%, #1fa3e8 82%);
   transform: rotate(-4deg);
-  z-index: 2;
+  z-index: 1;
 }
 
 .decor.dot-a {
   top: 7%;
-  left: 43%;
+  right: 4%;
   width: 7%;
   aspect-ratio: 1;
   border-radius: 50%;
@@ -490,8 +494,8 @@ button.pill {
 }
 
 .decor.dot-b {
+  right: 8%;
   bottom: -14%;
-  left: 27%;
   width: 20%;
   aspect-ratio: 1;
   border-radius: 50%;
@@ -500,14 +504,14 @@ button.pill {
 }
 
 .decor.arrow {
-  bottom: 22%;
-  left: 37%;
-  width: 9%;
+  right: 11%;
+  bottom: 18%;
+  width: 8%;
   fill: var(--orange);
   stroke: var(--ink);
   stroke-width: 2.5;
   stroke-linejoin: round;
-  z-index: 2;
+  z-index: 1;
 }
 
 /* --- Results ------------------------------------------------------------- */
@@ -973,8 +977,9 @@ details[open] summary .round svg {
   }
 
   .hero-input {
+    order: 0;
     border-top: var(--line);
-    border-left: 0;
+    border-right: 0;
   }
 
   .decor {

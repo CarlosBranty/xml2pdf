@@ -10,6 +10,10 @@ use xml2pdf_core::{Document, DocumentKind, Line, PaymentForm, catalog, tax_schem
 use crate::RenderOptions;
 use crate::format::{date, decimals, money, money_with_symbol, quantity};
 
+/// Credit printed at the end of every document, followed by the addresses.
+const CREDIT_TEXT: &str = "PDF generado por qxml2pdf · Qlab by Qodi. Visítanos:";
+const CREDIT_LINKS: [&str; 2] = ["https://qlab.pe", "https://qodi.pe"];
+
 /// Legend code of the amount written in words (catalog 52).
 const AMOUNT_IN_WORDS: &str = "1000";
 
@@ -77,6 +81,7 @@ pub fn template_data(document: &Document, options: &RenderOptions) -> Value {
         "hash": document.hash,
         "legal": format!("Representación impresa de la {title}"),
         "footer": settings.footer,
+        "credit": { "text": CREDIT_TEXT, "links": CREDIT_LINKS },
     })
 }
 

@@ -523,3 +523,24 @@ fn survives_amounts_too_large_to_compute_with() {
         assert!(rendered.is_ok(), "{name}: {:?}", rendered.err());
     }
 }
+
+#[test]
+fn credits_the_tool_on_every_document() {
+    for name in FIXTURES {
+        let data = data(name, &RenderOptions::default());
+        assert_eq!(
+            data["credit"],
+            serde_json::json!({
+                "text": "PDF generado por qxml2pdf · Qlab by Qodi. Visítanos:",
+                "links": ["https://qlab.pe", "https://qodi.pe"],
+            }),
+            "{name}"
+        );
+    }
+    for format in [PaperFormat::A4, PaperFormat::Ticket80] {
+        assert!(
+            builtin_template(format).contains("d.credit"),
+            "{format} prints the credit"
+        );
+    }
+}

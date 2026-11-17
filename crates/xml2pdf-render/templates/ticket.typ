@@ -119,3 +119,11 @@ SON: #d.amount_in_words
     }
   })
 })
+
+// Credit of the tool, with its addresses as links.
+#v(1mm)
+#align(center, text(size: base - 1.5pt, {
+  d.credit.text
+  linebreak()
+  d.credit.links.map(address => link(address)).join(" o ")
+}))

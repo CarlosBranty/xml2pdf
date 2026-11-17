@@ -45,5 +45,6 @@ La fuente incluida es **Noto Sans** (normal y negrita).
 | `related[]` | Documentos relacionados `{label, id}` |
 | `hash` | Resumen de la firma del XML |
 | `legal`, `footer` | Texto legal y texto al pie configurado |
+| `credit.text`, `credit.links[]` | Crédito de la herramienta y sus direcciones, para mostrarlas como enlaces |
 
 Los campos opcionales llegan como nulo (`none` en Typst) cuando el XML no los trae.

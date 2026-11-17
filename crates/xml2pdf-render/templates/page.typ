@@ -218,3 +218,10 @@
 } else {
   panel(legal)
 }
+
+// Credit of the tool, with its addresses as links.
+#align(center, text(size: base - 1.5pt, fill: luma(90), {
+  d.credit.text
+  [ ]
+  d.credit.links.map(address => link(address)).join(" o ")
+}))

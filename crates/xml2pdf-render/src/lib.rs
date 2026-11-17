@@ -1,8 +1,9 @@
 //! Renders SUNAT electronic documents to PDF with Typst.
 //!
 //! A template is a plain Typst file that reads `data.json` (see
-//! [`template_data`]) and lays the document out. The built-in templates cover
-//! A4, A5 and thermal tickets; a custom template can replace them.
+//! [`template_data`]) and lays the document out. The built-in template draws
+//! the rows and blocks of a [`Design`] for every paper format; a custom
+//! template can replace it.
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod config;

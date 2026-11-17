@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "identifier": "pe.xml2pdf.desktop",
   "build": {
-    "frontendDist": "../ui"
+    "frontendDist": "../../../dist/desktop"
   },
   "app": {
     "withGlobalTauri": true,
@@ -12,14 +12,14 @@
       {
         "label": "main",
         "title": "xml2pdf",
-        "width": 980,
-        "height": 760,
-        "minWidth": 720,
-        "minHeight": 520
+        "width": 1280,
+        "height": 880,
+        "minWidth": 760,
+        "minHeight": 560
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost"
+      "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; img-src 'self' data: blob:; connect-src 'self' ipc: http://ipc.localhost"
     }
   },
   "bundle": {

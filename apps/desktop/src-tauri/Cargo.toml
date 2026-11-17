@@ -10,6 +10,10 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 xml2pdf-auto.workspace = true
+xml2pdf-render.workspace = true
 serde.workspace = true
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
+
+[dev-dependencies]
+tempfile.workspace = true

@@ -1,0 +1,73 @@
+/* Additions of the desktop app on top of the shared web styles. */
+
+.panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#watch-state.active {
+  border-color: var(--teal);
+  background: var(--teal);
+}
+
+.path {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: var(--line);
+  border-radius: 12px;
+  background: var(--white);
+}
+
+.options input[type="number"] {
+  width: 110px;
+  padding: 10px 12px;
+  border: var(--line);
+  border-radius: 12px;
+  background: var(--white);
+  color: var(--ink);
+  font: inherit;
+}
+
+.options select#printer,
+.options select#watch-format {
+  width: 100%;
+}
+
+.field-error {
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.log-title {
+  margin-top: 22px;
+}
+
+#watch-log:empty {
+  display: none;
+}
+
+#watch-log li {
+  padding: 9px 14px;
+  border-radius: 10px;
+  background: var(--white);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+#watch-log li.failed {
+  color: var(--danger);
+}

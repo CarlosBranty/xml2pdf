@@ -6875,7 +6875,9 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-dialog",
+ "tempfile",
  "xml2pdf-auto",
+ "xml2pdf-render",
 ]
 
 [[package]]

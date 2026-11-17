@@ -58,7 +58,7 @@ xml2pdf printers                                   # impresoras disponibles
 xml2pdf watch ~/Descargas --print --printer Caja   # convierte e imprime cada XML nuevo
 ```
 
-La aplicación de escritorio hace lo mismo con una ventana de configuración. Los PDF se guardan en la subcarpeta `pdf` de la carpeta vigilada, salvo que elijas otra.
+La aplicación de escritorio muestra la misma interfaz que la web y añade la sección **Impresión automática**: allí eliges la carpeta a vigilar, la impresora y las copias. En el escritorio, Guardar abre el diálogo del sistema e Imprimir envía el PDF directo a esa impresora. Los PDF se guardan en la subcarpeta `pdf` de la carpeta vigilada, salvo que elijas otra.
 
 | Sistema | Cómo imprime | Requisito |
 |---------|--------------|-----------|
@@ -74,7 +74,7 @@ Requiere Rust estable.
 | Pruebas | `cargo test` | — |
 | Web | `./scripts/build-web.sh` (genera `dist/web`) | target `wasm32-unknown-unknown` y `wasm-bindgen-cli` de la misma versión que en `Cargo.lock` |
 | Prueba de la web en navegador | `python3 scripts/ui-check.py` (tras compilar la web) | Firefox |
-| Escritorio | `cd apps/desktop && npm install && npm run build` | [Dependencias de Tauri 2](https://tauri.app/start/prerequisites/) |
+| Escritorio | `./scripts/build-desktop-ui.sh` y luego `cargo run -p xml2pdf-desktop` (o `cd apps/desktop && npm install && npm run build` para el instalador) | [Dependencias de Tauri 2](https://tauri.app/start/prerequisites/) |
 
 ## Desplegar la web en Dokploy
 

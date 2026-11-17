@@ -8,7 +8,7 @@ const { listen } = window.__TAURI__.event;
 const APPLY_DELAY_MS = 400;
 const MAX_LOG_ENTRIES = 200;
 /** Template family of each format, to know when a custom template applies. */
-const FAMILY = { a4: "page", a5: "page", ticket80: "ticket", ticket58: "ticket" };
+const FAMILY = { a4: "page", a5: "page", letter: "page", ticket80: "ticket", ticket58: "ticket" };
 
 const $ = (id) => document.getElementById(id);
 
@@ -154,6 +154,8 @@ async function apply() {
         show_qr: options.settings.show_qr,
         logo: options.logo ? Array.from(options.logo) : null,
         template: usesTemplate ? options.template : null,
+        page_design: options.settings.page_design ?? null,
+        ticket_design: options.settings.ticket_design ?? null,
       },
     });
     setMessage("");

@@ -1,0 +1,53 @@
+name: Reportar un error
+description: Algo no funciona como debería
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Antes de adjuntar un XML, reemplaza los datos reales: RUC, nombres, direcciones y montos.
+        Para una vulnerabilidad, no uses este formulario: sigue SECURITY.md.
+  - type: dropdown
+    id: piece
+    attributes:
+      label: Dónde ocurre
+      options:
+        - Web
+        - Línea de comandos
+        - Escritorio
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: Qué pasó
+      description: Qué hiciste, qué esperabas y qué obtuviste. Incluye el mensaje de error si lo hay.
+    validations:
+      required: true
+  - type: dropdown
+    id: document
+    attributes:
+      label: Tipo de comprobante
+      options:
+        - Factura (01)
+        - Boleta de venta (03)
+        - Nota de crédito (07)
+        - Nota de débito (08)
+        - Otro
+        - No aplica
+  - type: input
+    id: format
+    attributes:
+      label: Formato de papel
+      placeholder: a4, a5, letter, ticket80 o ticket58
+  - type: input
+    id: environment
+    attributes:
+      label: Sistema y versión
+      placeholder: Windows 11, xml2pdf 0.1.0, Chrome 130
+  - type: textarea
+    id: sample
+    attributes:
+      label: XML de ejemplo
+      description: Con los datos reales reemplazados. Comprueba que el XML modificado sigue fallando.
+      render: xml

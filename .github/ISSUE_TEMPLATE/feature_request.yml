@@ -1,0 +1,25 @@
+name: Proponer una mejora
+description: Una función nueva o un cambio en una existente
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Qué necesitas resolver
+      description: El problema, no la solución. Por ejemplo, "necesito imprimir guías de remisión".
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Cómo te gustaría que funcione
+  - type: dropdown
+    id: piece
+    attributes:
+      label: Dónde aplica
+      multiple: true
+      options:
+        - Web
+        - Línea de comandos
+        - Escritorio
+        - Formato del PDF

@@ -27,7 +27,7 @@ jobs:
       - run: cargo test --locked
 
   web:
-    name: Web build
+    name: Web and desktop interface
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -40,12 +40,18 @@ jobs:
           version="$(awk '/^name = "wasm-bindgen"$/ { getline; gsub(/[^0-9.]/, ""); print; exit }' Cargo.lock)"
           cargo install wasm-bindgen-cli --locked --version "$version"
       - run: ./scripts/build-web.sh
+      - run: ./scripts/build-desktop-ui.sh
       - run: node scripts/smoke-web.mjs dist/web fixtures
-      - name: Check the web app in a real browser
-        run: python3 scripts/ui-check.py dist/web
+      - name: Check both interfaces in a real browser
+        run: python3 scripts/ui-check.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-interface
+          path: dist/desktop
 
   desktop:
-    name: Desktop check
+    name: Desktop app
+    needs: web
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -57,7 +63,13 @@ jobs:
         with:
           components: clippy
       - uses: Swatinem/rust-cache@v2
-      - run: cargo clippy --locked --package xml2pdf-desktop -- -D warnings
+      # The desktop app embeds its interface at compile time.
+      - uses: actions/download-artifact@v4
+        with:
+          name: desktop-interface
+          path: dist/desktop
+      - run: cargo clippy --locked --package xml2pdf-desktop --all-targets -- -D warnings
+      - run: cargo test --locked --package xml2pdf-desktop
 
   deploy:
     name: Deploy to Dokploy

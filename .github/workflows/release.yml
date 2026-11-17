@@ -55,7 +55,15 @@ jobs:
         with:
           node-version: 22
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
+      - name: Build the interface embedded in the app
+        shell: bash
+        run: |
+          version="$(awk '/^name = "wasm-bindgen"$/ { getline; gsub(/[^0-9.]/, ""); print; exit }' Cargo.lock)"
+          cargo install wasm-bindgen-cli --locked --version "$version"
+          ./scripts/build-desktop-ui.sh
       - run: npm ci
         working-directory: apps/desktop
       - uses: tauri-apps/tauri-action@v0

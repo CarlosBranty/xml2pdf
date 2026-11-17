@@ -257,12 +257,24 @@ impl Document {
         )
     }
 
-    /// Suggested PDF file name: `RUC-TYPE-SERIES-NUMBER.pdf`.
+    /// Suggested PDF file name without extension: `RUC-TYPE-SERIES-NUMBER`.
+    ///
+    /// The values come from the XML, so every character other than letters,
+    /// digits, `-` and `_` is replaced: the name can never leave its folder.
     pub fn file_stem(&self) -> String {
         format!(
             "{}-{}-{}",
             self.supplier.doc_number, self.type_code, self.id
         )
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || matches!(c, '-' | '_') {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect()
     }
 }
 

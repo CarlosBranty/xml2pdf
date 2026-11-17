@@ -296,3 +296,24 @@ fn packs_files_into_a_zip() {
         ]
     );
 }
+
+#[test]
+fn keeps_document_identifiers_out_of_file_paths() {
+    let hostile = String::from_utf8(fixture("factura.xml"))
+        .unwrap()
+        .replace(
+            "<cbc:ID>F001-00000123</cbc:ID>\n  <cbc:IssueDate>",
+            "<cbc:ID>../../F001/1</cbc:ID>\n  <cbc:IssueDate>",
+        )
+        .replace(
+            "<cbc:ID schemeID=\"6\">20123456789</cbc:ID>",
+            "<cbc:ID schemeID=\"6\">..\\20123456789</cbc:ID>",
+        );
+    let doc = parse_str(&hostile).unwrap();
+    assert_eq!(
+        doc.id, "../../F001/1",
+        "the identifier itself is kept as written"
+    );
+
+    assert_eq!(doc.file_stem(), "___20123456789-01-______F001_1");
+}

@@ -18,8 +18,20 @@ default-members = [
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.92"
 license = "MIT"
 description = "Convert SUNAT electronic documents (UBL 2.1 XML) into printable PDFs"
+repository = "https://github.com/cbranty/xml2pdf"
+readme = "README.md"
+keywords = ["sunat", "ubl", "pdf", "invoice", "peru"]
+categories = ["command-line-utilities", "finance"]
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
 
 [workspace.dependencies]
 xml2pdf-core = { path = "crates/xml2pdf-core" }

@@ -3,7 +3,12 @@ name = "xml2pdf-auto"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
 description = "Folder watching and automatic printing for xml2pdf"
+
+[lints]
+workspace = true
 
 [dependencies]
 xml2pdf-render.workspace = true

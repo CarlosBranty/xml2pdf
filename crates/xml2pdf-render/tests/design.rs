@@ -227,7 +227,10 @@ fn locates_every_visible_block_in_the_preview() {
         for format in [PaperFormat::A4, PaperFormat::Ticket80] {
             let design = Design::preset(preset, Family::of(format));
             let preview = design_preview(&document, &options(format, Some(design))).unwrap();
-            assert!(preview.blocks.iter().all(|block| block.height >= 4.0), "{preset:?} on {format}");
+            assert!(
+                preview.blocks.iter().all(|block| block.height >= 4.0),
+                "{preset:?} on {format}"
+            );
         }
     }
 

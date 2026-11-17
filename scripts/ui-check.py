@@ -4,10 +4,13 @@
 Serves a copy of the built site with the Content-Security-Policy of
 deploy/Caddyfile, opens it in headless Firefox once per scenario and verifies
 what the page reported: pasting an XML, an invalid document, a 105-file batch
-with bulk saving, and a ZIP over the batch limit.
+with bulk saving, and a ZIP over the batch limit. When the desktop interface
+is built (dist/desktop), it is checked too, with a stand-in for the Tauri
+bridge that records the commands the window sends.
 
-Usage: python3 scripts/ui-check.py [dist/web] [--screenshots DIR]
-Requires Firefox. Build the site first with scripts/build-web.sh.
+Usage: python3 scripts/ui-check.py [dist/web] [--desktop DIR] [--screenshots DIR]
+Requires Firefox. Build first with scripts/build-web.sh (and
+scripts/build-desktop-ui.sh for the desktop interface).
 """
 
 import argparse
@@ -34,6 +37,11 @@ PIXEL = bytes.fromhex(
 )
 
 
+def desktop_security_policy() -> str:
+    config = json.loads((ROOT / "apps/desktop/src-tauri/tauri.conf.json").read_text(encoding="utf-8"))
+    return config["app"]["security"]["csp"]
+
+
 def content_security_policy() -> str:
     caddyfile = (ROOT / "deploy/Caddyfile").read_text(encoding="utf-8")
     match = re.search(r'Content-Security-Policy "([^"]+)"', caddyfile)
@@ -46,6 +54,7 @@ class Handler(SimpleHTTPRequestHandler):
     """Static files plus the endpoints the driver script talks to."""
 
     policy = ""
+    desktop_policy = ""
     reports: dict = {}
     uploads: dict = {}
     reported: dict = {}
@@ -75,7 +84,8 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
 
     def end_headers(self):
-        self.send_header("Content-Security-Policy", self.policy)
+        desktop = self.path.startswith("/desktop/")
+        self.send_header("Content-Security-Policy", self.desktop_policy if desktop else self.policy)
         self.send_header("Cache-Control", "no-store")
         super().end_headers()
 
@@ -83,8 +93,8 @@ class Handler(SimpleHTTPRequestHandler):
         pass
 
 
-def prepare_site(dist: Path, site: Path) -> None:
-    """Copies the built site and adds the fixtures and the driver script."""
+def prepare_site(dist: Path, site: Path, tauri_stub: bool = False) -> None:
+    """Copies a built site and adds the fixtures and the driver script."""
     shutil.copytree(dist, site)
     for fixture in (ROOT / "fixtures").glob("*.xml"):
         shutil.copy(fixture, site / fixture.name)
@@ -100,8 +110,16 @@ def prepare_site(dist: Path, site: Path) -> None:
     html = index.read_text(encoding="utf-8")
     if marker not in html:
         sys.exit("index.html does not load app.js as expected")
+    before = ""
+    if tauri_stub:
+        # The bridge must exist before the app's modules run.
+        shutil.copy(ROOT / "scripts/ui-check-tauri-stub.js", site / "ui-check-tauri-stub.js")
+        before = '<script src="ui-check-tauri-stub.js"></script>\n    '
     index.write_text(
-        html.replace(marker, marker + '\n    <script type="module" src="ui-check-driver.js"></script>'),
+        html.replace(
+            marker,
+            before + marker + '\n    <script type="module" src="ui-check-driver.js"></script>',
+        ),
         encoding="utf-8",
     )
 
@@ -111,9 +129,63 @@ def expect(failures: list, scenario: str, label: str, actual, expected) -> None:
         failures.append(f"{scenario}: {label}: expected {expected!r}, got {actual!r}")
 
 
-def verify(reports: dict, uploads: dict) -> list:
+def verify_desktop(failures: list, desktop: dict) -> None:
+    check = partial(expect, failures, "desktop")
+    check("commands at startup", desktop["startupCommands"], ["snapshot", "apply_settings"])
+    check("printers", desktop["printers"], ["Predeterminada del sistema", "Caja", "Oficina"])
+    check("watched folder", desktop["watchDir"], "/descargas")
+    check("output folder", desktop["outputDir"], "/descargas › pdf")
+    check("save hint mentions the system dialog", "diálogo del sistema" in desktop["saveHint"], True)
+    check(
+        "save",
+        desktop["save"],
+        {
+            "status": "Guardado: /guardados/20123456789-01-F001-00000123-a4.pdf",
+            "name": "20123456789-01-F001-00000123-a4.pdf",
+            "extension": "pdf",
+            "header": "%PDF-",
+        },
+    )
+    check(
+        "print",
+        desktop["print"],
+        {
+            "status": "Enviado a la impresora: Caja",
+            "name": "20123456789-01-F001-00000123-ticket80.pdf",
+            "format": "ticket80",
+            "width": 80,
+            "taller": True,
+            "header": "%PDF-",
+        },
+    )
+    check(
+        "settings sent to the backend",
+        desktop["applied"],
+        {
+            "watch": {
+                "watch_dir": "/descargas",
+                "output_dir": None,
+                "print": False,
+                "printer": "Caja",
+                "copies": 3,
+                "watch_on_start": False,
+                "format": "a4",
+            },
+            "render": {"issuer_lines": [], "footer": None, "show_qr": True, "logo": None, "template": None},
+        },
+    )
+    check("watch state", desktop["watchState"], "Vigilando")
+    check("start_watching sent", desktop["startedWatching"], True)
+    check(
+        "log, newest first",
+        desktop["log"],
+        ["roto.xml: not valid XML", "20123456789-01-F001-1.pdf — PDF creado e impreso"],
+    )
+
+
+def verify(reports: dict, uploads: dict, scenarios: list) -> list:
     failures: list = []
-    for scenario in SCENARIOS:
+    for scenario in scenarios:
         report = reports.get(scenario)
         if report is None:
             failures.append(f"{scenario}: the page did not report")
@@ -181,12 +253,15 @@ def verify(reports: dict, uploads: dict) -> list:
         "Se convirtieron los primeros 100 comprobantes; 3 quedaron fuera de esta tanda. "
         "Conviértelos en una tanda aparte.",
     )
+    if "desktop" in scenarios:
+        verify_desktop(failures, reports["desktop"])
     return failures
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("dist", nargs="?", default=str(ROOT / "dist/web"), help="built site folder")
+    parser.add_argument("--desktop", default=str(ROOT / "dist/desktop"), help="built desktop interface folder")
     parser.add_argument("--screenshots", help="folder to keep one screenshot per scenario")
     arguments = parser.parse_args()
 
@@ -200,19 +275,27 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="xml2pdf-ui-check-") as scratch:
         scratch_dir = Path(scratch)
         prepare_site(dist, scratch_dir / "site")
+        scenarios = list(SCENARIOS)
+        if (Path(arguments.desktop) / "panel.html").is_file():
+            prepare_site(Path(arguments.desktop), scratch_dir / "site/desktop", tauri_stub=True)
+            scenarios.append("desktop")
+        else:
+            print("skipped desktop (interface not built)")
         shots = Path(arguments.screenshots) if arguments.screenshots else scratch_dir / "shots"
         shots.mkdir(parents=True, exist_ok=True)
 
         Handler.policy = content_security_policy()
-        Handler.reported = {scenario: threading.Event() for scenario in SCENARIOS}
+        Handler.desktop_policy = desktop_security_policy()
+        Handler.reported = {scenario: threading.Event() for scenario in scenarios}
         server = ThreadingHTTPServer(("127.0.0.1", 0), partial(Handler, directory=str(scratch_dir / "site")))
         threading.Thread(target=server.serve_forever, daemon=True).start()
         origin = f"http://127.0.0.1:{server.server_address[1]}"
 
-        for scenario in SCENARIOS:
+        for scenario in scenarios:
             # The image request keeps the page loading until the scenario reports.
-            page = scratch_dir / "site" / f"{scenario}.html"
-            html = (scratch_dir / "site/index.html").read_text(encoding="utf-8")
+            folder = "desktop/" if scenario == "desktop" else ""
+            page = scratch_dir / "site" / folder / f"{scenario}.html"
+            html = (page.parent / "index.html").read_text(encoding="utf-8")
             page.write_text(
                 html.replace("</body>", f'<img src="/wait/{scenario}" alt="" width="1" height="1" /></body>'),
                 encoding="utf-8",
@@ -224,9 +307,9 @@ def main() -> int:
                     [
                         firefox, "--headless", "--no-remote",
                         "--profile", str(profile),
-                        "--window-size=1440,1700",
+                        "--window-size=1440,2300",
                         "--screenshot", str(shots / f"{scenario}.png"),
-                        f"{origin}/{scenario}.html?scenario={scenario}",
+                        f"{origin}/{folder}{scenario}.html?scenario={scenario}",
                     ],
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                     timeout=SCENARIO_TIMEOUT_SECONDS + 30, check=False,
@@ -236,7 +319,7 @@ def main() -> int:
             print(f"{'ok ' if scenario in Handler.reports else 'NO REPORT'} {scenario}")
         server.shutdown()
 
-        failures = verify(Handler.reports, Handler.uploads)
+        failures = verify(Handler.reports, Handler.uploads, scenarios)
 
     for failure in failures:
         print(f"FAIL {failure}")

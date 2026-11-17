@@ -132,6 +132,72 @@ const scenarios = {
     return report;
   },
 
+  /** The desktop interface, with a stand-in for the Tauri bridge. */
+  async desktop() {
+    await ready();
+    await until(() => $("toggle-watch"), "the watcher panel");
+    const stub = window.__tauriStub;
+    const commands = () => stub.calls.map((call) => call.command);
+    const last = (command) => stub.calls.findLast((call) => call.command === command)?.args;
+    const header = (bytes) => String.fromCharCode(...bytes.slice(0, 5));
+    await until(() => commands().includes("apply_settings"), "the first settings sync");
+    const report = {
+      startupCommands: commands(),
+      printers: [...$("printer").options].map((option) => option.textContent),
+      watchDir: $("watch-dir").textContent,
+      outputDir: $("output-dir").textContent,
+    };
+
+    await paste(new TextDecoder().decode(await fetchBytes("factura.xml")));
+    await until(previewsDrawn, "the previews");
+    report.saveHint = $("save-hint").textContent;
+    const cards = [...document.querySelectorAll(".format")];
+
+    cards[0].querySelector(".save").click();
+    await until(() => $("status").textContent.startsWith("Guardado"), "the save");
+    const saved = last("save_file");
+    report.save = {
+      status: $("status").textContent,
+      name: saved.name,
+      extension: saved.extension,
+      header: header(saved.bytes),
+    };
+
+    cards[2].querySelectorAll("button")[1].click();
+    await until(() => $("status").textContent.startsWith("Enviado"), "the print");
+    const printed = last("print_pdf");
+    report.print = {
+      status: $("status").textContent,
+      name: printed.name,
+      format: printed.format,
+      width: Math.round(printed.pageMm[0]),
+      taller: printed.pageMm[1] > 60,
+      header: header(printed.bytes),
+    };
+
+    $("copies").value = "3";
+    $("copies").dispatchEvent(new Event("input", { bubbles: true }));
+    await until(() => last("apply_settings")?.watch.copies === 3, "the settings to be applied");
+    report.applied = last("apply_settings");
+
+    $("toggle-watch").click();
+    await until(() => $("toggle-watch").textContent === "Detener vigilancia", "the watcher to start");
+    report.watchState = $("watch-state").textContent;
+    report.startedWatching = commands().includes("start_watching");
+
+    stub.emit("watch-event", {
+      kind: "processed",
+      source: "/descargas/F001-1.xml",
+      pdf: "/descargas/pdf/20123456789-01-F001-1.pdf",
+      printed: true,
+      print_error: null,
+    });
+    stub.emit("watch-event", { kind: "failed", source: "/descargas/roto.xml", message: "not valid XML" });
+    // Entries start with the time of day, which is dropped here.
+    report.log = [...$("watch-log").children].map((item) => item.textContent.split(" · ").slice(1).join(" · "));
+    return report;
+  },
+
   /** Choose one ZIP holding more documents than a batch accepts. */
   async ziplimit() {
     await ready();

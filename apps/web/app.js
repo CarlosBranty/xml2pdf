@@ -6,10 +6,14 @@ import init, {
   builtinTemplate,
   convert,
   defaultSettings,
+  designCatalog,
+  designPreview,
   extract,
+  presetDesign,
   renderPdf,
   summary,
 } from "./pkg/xml2pdf_wasm.js";
+import { createDesigner } from "./designer.js";
 import * as platform from "./platform.js";
 
 const STORAGE_KEY = "xml2pdf.state.v2";
@@ -26,6 +30,7 @@ const CHIPS_SHOWN = 6;
 const FORMATS = [
   { id: "a4", title: "A4", size: "210 × 297 mm", family: "page" },
   { id: "a5", title: "A5", size: "148 × 210 mm", family: "page" },
+  { id: "letter", title: "Carta", size: "216 × 279 mm", family: "page" },
   { id: "ticket80", title: "Ticket 80", size: "80 mm", family: "ticket" },
   { id: "ticket58", title: "Ticket 58", size: "58 mm", family: "ticket" },
 ];
@@ -58,6 +63,9 @@ const state = {
   useTemplate: false,
 };
 
+/** XML shown in the format designer until the user converts a document. */
+let sampleXml = null;
+let designer = null;
 let ready = false;
 let saving = false;
 let renderTimer = 0;
@@ -314,19 +322,31 @@ function convertAll() {
   state.selected = Math.max(firstValid, 0);
   renderSelected();
   showResults();
+  designer?.refresh();
 }
 
-/** Renders again after an option changes, when there is something on screen. */
-function scheduleRender() {
-  readOptions();
+/** Saves the options and renders again what is on screen. */
+function optionsChanged({ redrawDesigner = true } = {}) {
   saveOptions();
   platform.optionsChanged(currentOptions());
-  if ($("resultado").hidden) return;
   clearTimeout(renderTimer);
   renderTimer = setTimeout(() => {
+    if (redrawDesigner) designer?.refresh();
+    if ($("resultado").hidden) return;
     renderSelected();
     showResults();
   }, RENDER_DELAY_MS);
+}
+
+/** Reads the options form after one of its fields changed. */
+function scheduleRender() {
+  readOptions();
+  optionsChanged();
+}
+
+/** The document the designer previews: the selected one, or the sample. */
+function designerSample() {
+  return state.documents[state.selected]?.summary ? state.documents[state.selected].bytes : sampleXml;
 }
 
 // --- Results ---------------------------------------------------------------
@@ -358,6 +378,7 @@ function documentRow(item, index) {
     state.selected = index;
     renderSelected();
     showResults();
+    designer?.refresh();
   });
   row.append(button);
   return row;
@@ -445,7 +466,7 @@ function showResults() {
   } else if (isBatch) {
     setStatus(`Listo: ${valid} comprobantes. Elige uno para verlo o guárdalos todos.`);
   } else {
-    setStatus("Listo: tu PDF está en los cuatro formatos.");
+    setStatus("Listo: tu PDF está en todos los formatos.");
   }
 }
 
@@ -571,6 +592,16 @@ async function main() {
   showInput();
   setStatus("Listo. Pega, arrastra o elige tu XML.");
   try {
+    sampleXml = new Uint8Array(await (await fetch("sample.xml")).arrayBuffer());
+    designer = createDesigner({
+      engine: { designCatalog, designPreview, presetDesign },
+      settings: () => state.settings,
+      logo: () => state.logo,
+      sample: designerSample,
+      // The designer redraws itself; the rest of the page follows.
+      changed: () => optionsChanged({ redrawDesigner: false }),
+      save: (blob, name, type) => platform.save(blob, name, type),
+    });
     await platform.start(currentOptions());
   } catch (error) {
     setStatus(errorText(error), true);

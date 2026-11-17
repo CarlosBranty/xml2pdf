@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Convertir XML de SUNAT a PDF gratis | xml2pdf · Qlab by Qodi</title>
-    <meta name="description" content="Convierte gratis el XML de tu factura, boleta, nota de crédito o nota de débito electrónica de SUNAT a PDF imprimible en A4, A5 o ticket de 80 y 58 mm. Sin registro y sin subir tus archivos." />
+    <meta name="description" content="Convierte gratis el XML de tu factura, boleta, nota de crédito o nota de débito electrónica de SUNAT a PDF imprimible en A4, A5, Carta o ticket de 80 y 58 mm. Sin registro y sin subir tus archivos." />
     <meta name="robots" content="index, follow" />
     <meta name="author" content="Qodi" />
     <meta name="theme-color" content="#f1dbe1" />
@@ -44,7 +44,7 @@
               {
                 "@type": "Question",
                 "name": "¿Cómo convierto el XML de una factura electrónica de SUNAT a PDF?",
-                "acceptedAnswer": { "@type": "Answer", "text": "Pega el contenido del XML, arrástralo o elige el archivo, y presiona Convertir. Verás la vista previa en A4, A5, ticket de 80 mm y ticket de 58 mm, y podrás guardar o imprimir cada una." }
+                "acceptedAnswer": { "@type": "Answer", "text": "Pega el contenido del XML, arrástralo o elige el archivo, y presiona Convertir. Verás la vista previa en A4, A5, Carta, ticket de 80 mm y ticket de 58 mm, y podrás guardar o imprimir cada una." }
               },
               {
                 "@type": "Question",
@@ -86,7 +86,7 @@
       </a>
       <nav aria-label="Secciones">
         <a href="#convertir">Convertir</a>
-        <a href="#formatos">Formatos</a>
+        <a href="#disenador">Diseñador</a>
         <a href="#personalizar">Personalizar</a>
         <a href="#preguntas">Preguntas</a>
       </nav>
@@ -144,6 +144,7 @@
             <select id="bulk-format">
               <option value="a4">A4</option>
               <option value="a5">A5</option>
+              <option value="letter">Carta</option>
               <option value="ticket80">Ticket 80 mm</option>
               <option value="ticket58">Ticket 58 mm</option>
             </select>
@@ -153,6 +154,117 @@
         </div>
         <div id="formats" class="formats"></div>
         <p id="save-hint" class="hint"></p>
+      </section>
+
+      <section id="disenador" class="card wide designer">
+        <header class="results-head">
+          <div>
+            <p class="eyebrow">Diseñador de formato</p>
+            <h2>Arma tu comprobante</h2>
+          </div>
+          <div class="inline">
+            <label for="design-format">Formato</label>
+            <select id="design-format">
+              <option value="a4">A4</option>
+              <option value="a5">A5</option>
+              <option value="letter">Carta</option>
+              <option value="ticket80">Ticket 80 mm</option>
+              <option value="ticket58">Ticket 58 mm</option>
+            </select>
+          </div>
+        </header>
+        <p class="hint">Arrastra un bloque sobre la vista previa para moverlo: suéltalo arriba o abajo de otro para darle su propia fila, o a un lado para ponerlos juntos. Haz clic en un bloque para editarlo.</p>
+
+        <div class="designer-body">
+          <div class="designer-stage">
+            <div id="design-canvas" class="design-canvas">
+              <img id="design-image" alt="Vista previa del diseño" />
+              <div id="design-overlays"></div>
+            </div>
+            <p id="design-error" class="status error" role="status"></p>
+          </div>
+
+          <aside class="designer-panel" aria-label="Opciones del diseño">
+            <div class="group">
+              <p class="group-title">Estilos listos</p>
+              <div id="design-presets" class="pills"></div>
+            </div>
+
+            <div class="group">
+              <p class="group-title">Estilo</p>
+              <div class="pair">
+                <label for="design-text">Tamaño de letra</label>
+                <select id="design-text">
+                  <option value="small">Pequeña</option>
+                  <option value="normal">Normal</option>
+                  <option value="large">Grande</option>
+                </select>
+                <label for="design-boxes">Recuadros</label>
+                <select id="design-boxes">
+                  <option value="rounded">Redondeados</option>
+                  <option value="square">Rectos</option>
+                  <option value="lines">Solo líneas</option>
+                  <option value="none">Sin recuadros</option>
+                </select>
+                <label for="design-heading">Encabezados</label>
+                <select id="design-heading">
+                  <option value="shaded">Gris</option>
+                  <option value="inverted">Negro</option>
+                  <option value="plain">Sin fondo</option>
+                </select>
+              </div>
+              <label class="check"><input id="design-stripes" type="checkbox" /> Filas alternadas en la tabla</label>
+              <label class="check"><input id="design-filler" type="checkbox" /> Completar la tabla con filas vacías</label>
+            </div>
+
+            <div id="design-block" class="group selected-block" hidden>
+              <p class="group-title">Bloque: <span id="design-block-name"></span></p>
+              <div class="pair">
+                <label for="design-block-width">Ancho en su fila (1 a 6)</label>
+                <input id="design-block-width" type="number" min="1" max="6" step="1" />
+                <label for="design-block-boxed">Recuadro</label>
+                <select id="design-block-boxed">
+                  <option value="">Según el estilo</option>
+                  <option value="true">Con recuadro</option>
+                  <option value="false">Sin recuadro</option>
+                </select>
+                <label for="design-block-align">Alineación</label>
+                <select id="design-block-align">
+                  <option value="">Según el bloque</option>
+                  <option value="left">Izquierda</option>
+                  <option value="center">Centro</option>
+                  <option value="right">Derecha</option>
+                </select>
+              </div>
+              <div id="design-block-text-field" class="field" hidden>
+                <label for="design-block-text">Texto</label>
+                <textarea id="design-block-text" rows="3"></textarea>
+              </div>
+              <div id="design-block-columns-field" class="field" hidden>
+                <p class="group-title">Columnas de la tabla</p>
+                <div id="design-block-columns"></div>
+              </div>
+              <button id="design-block-remove" type="button" class="button outline small">Quitar bloque</button>
+            </div>
+
+            <div class="group">
+              <p class="group-title">Agregar bloque</p>
+              <div id="design-palette" class="pills"></div>
+            </div>
+
+            <div class="group">
+              <p class="group-title">Estructura</p>
+              <ol id="design-structure" class="structure"></ol>
+            </div>
+
+            <div class="actions">
+              <button id="design-reset" type="button" class="button outline small">Restablecer</button>
+              <button id="design-export" type="button" class="button outline small">Exportar</button>
+              <button id="design-import" type="button" class="button outline small">Importar</button>
+              <input id="design-import-file" type="file" accept=".json,application/json" hidden />
+            </div>
+          </aside>
+        </div>
       </section>
 
       <section class="card dark">
@@ -172,6 +284,7 @@
         <ul class="pills tilted">
           <li class="pill">A4</li>
           <li class="pill filled">A5</li>
+          <li class="pill">Carta</li>
           <li class="pill filled">Ticket 80 mm</li>
           <li class="pill">Ticket 58 mm</li>
         </ul>
@@ -240,7 +353,7 @@
         <dl class="faq">
           <div>
             <dt>¿Cómo convierto el XML de una factura electrónica de SUNAT a PDF?</dt>
-            <dd>Pega el contenido del XML, arrástralo o elige el archivo, y presiona Convertir. Verás la vista previa en A4, A5, ticket de 80 mm y ticket de 58 mm, y podrás guardar o imprimir cada una.</dd>
+            <dd>Pega el contenido del XML, arrástralo o elige el archivo, y presiona Convertir. Verás la vista previa en A4, A5, Carta, ticket de 80 mm y ticket de 58 mm, y podrás guardar o imprimir cada una.</dd>
           </div>
           <div>
             <dt>¿Mis comprobantes se suben a algún servidor?</dt>

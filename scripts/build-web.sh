@@ -16,7 +16,9 @@ cd "$root"
 cargo build --package xml2pdf-wasm --target wasm32-unknown-unknown --profile wasm-release --locked
 
 mkdir -p "$out" "$out/fonts"
-cp apps/web/styles.css apps/web/app.js apps/web/platform.js apps/web/favicon.svg apps/web/og.png "$out/"
+cp apps/web/styles.css apps/web/app.js apps/web/designer.js apps/web/platform.js apps/web/favicon.svg apps/web/og.png "$out/"
+# The format designer previews this document until the user converts one.
+cp fixtures/factura.xml "$out/sample.xml"
 
 # Pages that mention the public address take it from SITE_URL. Without it,
 # the lines that need an absolute address are left out.

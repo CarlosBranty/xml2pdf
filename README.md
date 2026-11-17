@@ -20,7 +20,7 @@ xml2pdf convert descargas/ -o pdf/ -f ticket80
 | Web | Convertir en el navegador; los archivos no salen de tu equipo | `apps/web` |
 | Escritorio | Vigilar la carpeta de descargas e imprimir cada comprobante nuevo | `apps/desktop` |
 
-En la web: pega el contenido del XML, arrástralo o elige el archivo; presiona **Convertir** y verás la vista previa en los cuatro formatos, cada una con **Guardar** e **Imprimir**. En Chrome y Edge, Guardar deja elegir la carpeta; en otros navegadores descarga el archivo.
+En la web: pega el contenido del XML, arrástralo o elige el archivo; presiona **Convertir** y verás la vista previa en todos los formatos, cada una con **Guardar** e **Imprimir**. En Chrome y Edge, Guardar deja elegir la carpeta; en otros navegadores descarga el archivo.
 
 También puedes convertir por lotes: elige o arrastra varios XML (o un ZIP) y usa **Guardar todos** para descargar un ZIP con todos los PDF en el formato que elijas. Cada tanda admite hasta 100 comprobantes y 50 MB; lo que exceda se omite con un aviso.
 
@@ -30,7 +30,8 @@ Comprobantes admitidos: factura (01), boleta de venta (03), nota de crédito (07
 
 | Opción | Valores | CLI |
 |--------|---------|-----|
-| Tamaño de papel | `a4`, `a5`, `ticket80`, `ticket58` | `--format` |
+| Tamaño de papel | `a4`, `a5`, `letter` (Carta), `ticket80`, `ticket58` | `--format` |
+| Diseño por bloques | hecho en el diseñador | `--config` |
 | Logo | PNG, JPEG, GIF, WebP o SVG | `--logo` |
 | Texto al pie | texto libre | `--footer` |
 | Código QR | visible u oculto | `--no-qr` |
@@ -48,6 +49,20 @@ Las mismas opciones se pueden guardar en un archivo JSON y usar con `--config`; 
   "template": "mi-plantilla.typ"
 }
 ```
+
+### Diseñador de formato
+
+En la web y en el escritorio, la sección **Diseñador de formato** muestra una vista previa grande del comprobante. Cada parte es un bloque: arrástralo sobre la vista previa para moverlo (arriba o abajo de otro para darle su propia fila, a un lado para ponerlos juntos) y haz clic en él para editarlo.
+
+| Qué puedes cambiar | Cómo |
+|--------------------|------|
+| Estilo completo | Estilos listos: Clásico, Moderno, Compacto, Mínimo |
+| Letra, recuadros, encabezados, filas de la tabla | Panel **Estilo** |
+| Ancho, recuadro, alineación de un bloque | Clic en el bloque |
+| Columnas de la tabla de ítems | Clic en la tabla |
+| Texto propio, líneas y espacios | **Agregar bloque** |
+
+Las páginas (A4, A5, Carta) y los tickets tienen cada uno su diseño. **Exportar** guarda ambos en un archivo JSON que el CLI acepta tal cual: `xml2pdf convert factura.xml --config diseno-xml2pdf.json`. El formato del archivo está en [docs/templates.md](docs/templates.md#diseños-por-bloques).
 
 Todos los PDF terminan con una línea de crédito de la herramienta, con enlaces a qlab.pe y qodi.pe.
 

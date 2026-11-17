@@ -12,7 +12,10 @@ RUN cargo install wasm-bindgen-cli --locked \
     --version "$(awk '/^name = "wasm-bindgen"$/ { getline; gsub(/[^0-9.]/, ""); print; exit }' Cargo.lock)"
 
 COPY . .
-RUN ./scripts/build-web.sh /out \
+# Public address of the site, used for the canonical link, the social preview
+# and the sitemap. Set it as a build argument in Dokploy.
+ARG SITE_URL=""
+RUN SITE_URL="$SITE_URL" ./scripts/build-web.sh /out \
     && find /out -type f \( -name '*.wasm' -o -name '*.js' -o -name '*.css' -o -name '*.html' -o -name '*.svg' -o -name '*.ttf' \) \
         -exec gzip -9 --keep {} +
 

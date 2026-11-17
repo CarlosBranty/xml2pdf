@@ -522,6 +522,10 @@ function bindEvents() {
     });
   }
   dropzone.addEventListener("drop", (event) => addFiles(event.dataTransfer.files));
+  // A file dropped outside the drop area must not make the page open it.
+  for (const type of ["dragover", "drop"]) {
+    window.addEventListener(type, (event) => event.preventDefault());
+  }
 
   $("xml-text").addEventListener("input", showInput);
   $("convert").addEventListener("click", () => {

@@ -10,6 +10,7 @@ import init, {
   renderPdf,
   summary,
 } from "./pkg/xml2pdf_wasm.js";
+import * as platform from "./platform.js";
 
 const STORAGE_KEY = "xml2pdf.state.v2";
 const RENDER_DELAY_MS = 350;
@@ -128,6 +129,17 @@ function readOptions() {
   state.useTemplate = $("use-template").checked;
   state.templateTarget = $("template-target").value;
   state.template = $("template").value;
+}
+
+/** The options as the platform layer receives them. */
+function currentOptions() {
+  return {
+    settings: state.settings,
+    logo: state.logo,
+    template: state.template,
+    templateTarget: state.templateTarget,
+    useTemplate: state.useTemplate,
+  };
 }
 
 /** Arguments shared by every render of a format: settings, logo and template. */
@@ -276,6 +288,8 @@ function renderSelected() {
       const preview = new Blob([file.preview], { type: "image/svg+xml" });
       rendered[format.id] = {
         fileName: `${selected.summary.file_stem}-${format.id}.pdf`,
+        formatId: format.id,
+        pageMm: [file.widthMm, file.heightMm],
         blob,
         pdfUrl: URL.createObjectURL(blob),
         previewUrl: URL.createObjectURL(preview),
@@ -306,6 +320,7 @@ function convertAll() {
 function scheduleRender() {
   readOptions();
   saveOptions();
+  platform.optionsChanged(currentOptions());
   if ($("resultado").hidden) return;
   clearTimeout(renderTimer);
   renderTimer = setTimeout(() => {
@@ -376,12 +391,12 @@ function formatCard(format, file) {
   save.type = "button";
   save.className = "button save";
   save.textContent = "Guardar";
-  save.addEventListener("click", () => saveBlob(file.blob, file.fileName, PDF_TYPE));
+  save.addEventListener("click", () => report(platform.save(file.blob, file.fileName, PDF_TYPE)));
   const print = document.createElement("button");
   print.type = "button";
   print.className = "button";
   print.textContent = "Imprimir";
-  print.addEventListener("click", () => printPdf(file));
+  print.addEventListener("click", () => report(platform.print(file)));
   actions.append(save, print);
 
   card.append(header, sheet, actions);
@@ -419,9 +434,7 @@ function showResults() {
   $("formats").replaceChildren(
     ...(state.current ? FORMATS.map((format) => formatCard(format, state.current[format.id])) : []),
   );
-  $("save-hint").textContent = window.showSaveFilePicker
-    ? "Guardar te deja elegir la carpeta y el nombre del archivo."
-    : "En este navegador, Guardar descarga el archivo en tu carpeta de descargas. Chrome y Edge permiten elegir la carpeta.";
+  $("save-hint").textContent = platform.saveHint();
   $("save-hint").hidden = !state.current;
   $("resultado").hidden = false;
 
@@ -466,7 +479,7 @@ async function saveAll() {
       return;
     }
     const zip = new Blob([bundle.finish()], { type: ZIP_TYPE.mime });
-    await saveBlob(zip, `comprobantes-${format.id}.zip`, ZIP_TYPE);
+    await report(platform.save(zip, `comprobantes-${format.id}.zip`, ZIP_TYPE));
     $("bulk-status").textContent =
       failures === 0 ? `${done} PDF en el ZIP.` : `${done} PDF en el ZIP; ${failures} con error.`;
   } finally {
@@ -475,52 +488,14 @@ async function saveAll() {
   }
 }
 
-/** Saves a file, letting the user choose the location where the browser supports it. */
-async function saveBlob(blob, fileName, type) {
-  if (window.showSaveFilePicker) {
-    try {
-      const handle = await window.showSaveFilePicker({
-        suggestedName: fileName,
-        types: [{ description: type.description, accept: { [type.mime]: [type.extension] } }],
-      });
-      const writable = await handle.createWritable();
-      await writable.write(blob);
-      await writable.close();
-      setStatus(`Guardado: ${handle.name}`);
-      return;
-    } catch (error) {
-      if (error.name === "AbortError") return;
-      // Any other failure falls back to a regular download.
-    }
+/** Shows the outcome of a platform action (saving, printing) in the status line. */
+async function report(action) {
+  try {
+    const message = await action;
+    if (message) setStatus(message);
+  } catch (error) {
+    setStatus(errorText(error), true);
   }
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = fileName;
-  link.click();
-  // The download has started by the next task; the URL is no longer needed.
-  setTimeout(() => URL.revokeObjectURL(url), 60_000);
-  setStatus(`Descargado: ${fileName}`);
-}
-
-/** Opens the print dialog for a PDF through a hidden frame. */
-function printPdf(file) {
-  document.querySelector(".print-frame")?.remove();
-  const frame = document.createElement("iframe");
-  frame.className = "print-frame";
-  frame.title = "Impresión";
-  frame.addEventListener("load", () => {
-    try {
-      frame.contentWindow.focus();
-      frame.contentWindow.print();
-    } catch {
-      // Some browsers do not let a page print an embedded PDF: open it instead.
-      window.open(file.pdfUrl, "_blank", "noopener");
-      setStatus("Se abrió el PDF en otra pestaña; imprímelo desde allí.");
-    }
-  });
-  frame.src = file.pdfUrl;
-  document.body.append(frame);
 }
 
 // --- Events ----------------------------------------------------------------
@@ -591,6 +566,11 @@ async function main() {
   fillOptions();
   showInput();
   setStatus("Listo. Pega, arrastra o elige tu XML.");
+  try {
+    await platform.start(currentOptions());
+  } catch (error) {
+    setStatus(errorText(error), true);
+  }
 }
 
 main();

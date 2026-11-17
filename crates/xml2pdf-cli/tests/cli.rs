@@ -230,6 +230,56 @@ fn applies_a_configuration_file_and_lets_options_override_it() {
 }
 
 #[test]
+fn applies_a_design_exported_by_the_designer() {
+    let folder = tempfile::tempdir().unwrap();
+    // The designer exports its designs in the shape of a configuration file.
+    let config = folder.path().join("diseno-xml2pdf.json");
+    std::fs::write(
+        &config,
+        r#"{"page_design":{"style":{"boxes":"none"},"rows":[{"blocks":[{"type":"document"}]},{"blocks":[{"type":"items","columns":["description","total"]}]}]},"ticket_design":null}"#,
+    )
+    .unwrap();
+
+    let (code, stdout, stderr) = run(xml2pdf()
+        .arg("data")
+        .arg(fixture("factura.xml"))
+        .arg("--config")
+        .arg(&config));
+    assert_eq!(code, 0, "{stderr}");
+    let data: serde_json::Value = serde_json::from_str(&stdout).unwrap();
+    let rows = data["design"]["rows"].as_array().unwrap();
+    assert_eq!(rows.len(), 2);
+    assert_eq!(
+        rows[1]["blocks"][0]["columns"],
+        serde_json::json!(["description", "total"])
+    );
+    assert_eq!(data["design"]["style"]["boxes"], "none");
+
+    let output = folder.path().join("carta.pdf");
+    let (code, _, stderr) = run(xml2pdf()
+        .arg("convert")
+        .arg(fixture("factura.xml"))
+        .arg("--config")
+        .arg(&config)
+        .args(["--format", "letter", "-o"])
+        .arg(&output));
+    assert_eq!(code, 0, "{stderr}");
+    assert!(is_pdf(&output));
+
+    std::fs::write(&config, r#"{"page_design":{"rows":[{"blocks":[]}]}}"#).unwrap();
+    let (code, _, stderr) = run(xml2pdf()
+        .arg("data")
+        .arg(fixture("factura.xml"))
+        .arg("--config")
+        .arg(&config));
+    assert_eq!(code, 1);
+    assert!(
+        stderr.contains("invalid design: row 1 must have between 1 and 3 blocks"),
+        "{stderr}"
+    );
+}
+
+#[test]
 fn renders_with_a_custom_template() {
     let folder = tempfile::tempdir().unwrap();
     let output = folder.path().join("salida.pdf");

@@ -24,6 +24,8 @@ function convert(name, overrides = {}, template) {
       name: file.name,
       header: String.fromCharCode(...file.pdf.slice(0, 5)),
       preview: file.preview,
+      width: Math.round(file.widthMm),
+      height: Math.round(file.heightMm),
     };
     file.free();
     return result;
@@ -47,6 +49,11 @@ for (const [name, format, expected] of cases) {
   }
   console.log(`ok ${name} (${format}) -> ${expected.join(", ")}`);
 }
+
+const [a4] = convert("factura.xml", { format: "a4" });
+assert.deepEqual([a4.width, a4.height], [210, 297], "the page size is reported");
+const [ticket] = convert("factura.xml", { format: "ticket80" });
+assert.ok(ticket.width === 80 && ticket.height > 60, "tickets report their real height");
 
 assert.throws(() => convert("factura.xml", { format: "letter" }), /invalid settings/);
 assert.throws(() => convert("factura.xml", { accent_color: "#aa0000" }), /invalid settings/);

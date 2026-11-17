@@ -10,6 +10,7 @@ pub struct PdfFile {
     name: String,
     pdf: Vec<u8>,
     preview: String,
+    page_mm: (f64, f64),
 }
 
 #[wasm_bindgen]
@@ -24,6 +25,18 @@ impl PdfFile {
     #[wasm_bindgen(getter)]
     pub fn pdf(&self) -> Vec<u8> {
         self.pdf.clone()
+    }
+
+    /// Width of the first page in millimetres.
+    #[wasm_bindgen(getter, js_name = widthMm)]
+    pub fn width_mm(&self) -> f64 {
+        self.page_mm.0
+    }
+
+    /// Height of the first page in millimetres. Tickets grow with their content.
+    #[wasm_bindgen(getter, js_name = heightMm)]
+    pub fn height_mm(&self) -> f64 {
+        self.page_mm.1
     }
 
     /// The document drawn as an SVG image, to show it without a PDF viewer.
@@ -53,6 +66,7 @@ pub fn convert(
             name: format!("{}.pdf", file.file_stem),
             pdf: file.pdf,
             preview: file.preview_svg.unwrap_or_default(),
+            page_mm: file.page_mm,
         })
         .collect())
 }

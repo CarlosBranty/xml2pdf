@@ -49,6 +49,8 @@ Las mismas opciones se pueden guardar en un archivo JSON y usar con `--config`; 
 }
 ```
 
+Todos los PDF terminan con una línea de crédito de la herramienta, con enlaces a qlab.pe y qodi.pe.
+
 Para cambiar el diseño, parte de una plantilla integrada: `xml2pdf template --format a4 > mi-plantilla.typ`. Los datos disponibles están en [docs/templates.md](docs/templates.md).
 
 ## Impresión automática
@@ -80,9 +82,12 @@ Requiere Rust estable.
 
 1. Crea una aplicación en Dokploy con este repositorio, tipo de build **Dockerfile** (ruta `./Dockerfile`).
 2. Añade un dominio apuntando al puerto **80** del contenedor.
-3. Para desplegar desde CI, define en GitHub los secretos `DOKPLOY_URL`, `DOKPLOY_API_KEY` y `DOKPLOY_APPLICATION_ID`. El workflow `CI` despliega cada push a `main` después de pasar las pruebas; sin esos secretos, el paso se omite. En ese caso desactiva **Auto Deploy** en Dokploy, o cada push se desplegará dos veces (una antes de que termine el CI).
+3. Define el argumento de build `SITE_URL` con la dirección pública (sin barra final). Con él se publican el enlace canónico, la imagen para redes y el `sitemap.xml`; sin él, esas partes se omiten.
+4. Para desplegar desde CI, define en GitHub los secretos `DOKPLOY_URL`, `DOKPLOY_API_KEY` y `DOKPLOY_APPLICATION_ID`. El workflow `CI` despliega cada push a `main` después de pasar las pruebas; sin esos secretos, el paso se omite. En ese caso desactiva **Auto Deploy** en Dokploy, o cada push se desplegará dos veces (una antes de que termine el CI).
 
 La imagen compila el motor WebAssembly en el servidor: el primer build tarda varios minutos y consume bastante memoria.
+
+La política del sitio solo permite incrustarlo en un marco desde `qlab.pe`; para otro dominio, cambia `frame-ancestors` en `deploy/Caddyfile`.
 
 Para probar la imagen en local: `docker compose up --build` y abre <http://localhost:8080>.
 

@@ -1,12 +1,81 @@
 <!doctype html>
-<html lang="es">
+<html lang="es-PE">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Convierte comprobantes electrónicos SUNAT (XML) a PDF imprimible, sin subir tus archivos a ningún servidor." />
-    <title>xml2pdf · XML SUNAT a PDF</title>
+    <title>Convertir XML de SUNAT a PDF gratis | xml2pdf · Qlab by Qodi</title>
+    <meta name="description" content="Convierte gratis el XML de tu factura, boleta, nota de crédito o nota de débito electrónica de SUNAT a PDF imprimible en A4, A5 o ticket de 80 y 58 mm. Sin registro y sin subir tus archivos." />
+    <meta name="robots" content="index, follow" />
+    <meta name="author" content="Qodi" />
+    <meta name="theme-color" content="#f1dbe1" />
+    <link rel="canonical" href="__SITE_URL__/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="es_PE" />
+    <meta property="og:site_name" content="Qlab by Qodi" />
+    <meta property="og:title" content="Convertir XML de SUNAT a PDF gratis" />
+    <meta property="og:description" content="Factura, boleta y notas electrónicas de SUNAT a PDF imprimible en A4, A5 o ticket. Gratis, sin registro y sin subir tus archivos." />
+    <meta property="og:url" content="__SITE_URL__/" />
+    <meta property="og:image" content="__SITE_URL__/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Convertir XML de SUNAT a PDF gratis" />
+    <meta name="twitter:description" content="Factura, boleta y notas electrónicas de SUNAT a PDF imprimible en A4, A5 o ticket. Gratis y sin subir tus archivos." />
+    <meta name="twitter:image" content="__SITE_URL__/og.png" />
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="styles.css" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebApplication",
+            "name": "xml2pdf",
+            "url": "__SITE_URL__/",
+            "description": "Convierte el XML de comprobantes electrónicos de SUNAT (factura, boleta, nota de crédito y nota de débito) a PDF imprimible en A4, A5 o ticket.",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web, Windows, macOS, Linux",
+            "inLanguage": "es-PE",
+            "isAccessibleForFree": true,
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "PEN" },
+            "publisher": { "@type": "Organization", "name": "Qodi", "url": "https://qodi.pe" }
+          },
+          {
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "¿Cómo convierto el XML de una factura electrónica de SUNAT a PDF?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Pega el contenido del XML, arrástralo o elige el archivo, y presiona Convertir. Verás la vista previa en A4, A5, ticket de 80 mm y ticket de 58 mm, y podrás guardar o imprimir cada una." }
+              },
+              {
+                "@type": "Question",
+                "name": "¿Mis comprobantes se suben a algún servidor?",
+                "acceptedAnswer": { "@type": "Answer", "text": "No. El PDF se genera en tu propio equipo, dentro del navegador. Los archivos no salen de tu computadora." }
+              },
+              {
+                "@type": "Question",
+                "name": "¿Qué comprobantes puedo convertir?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Facturas, boletas de venta, notas de crédito y notas de débito electrónicas en formato UBL 2.1, sueltas o dentro de un ZIP." }
+              },
+              {
+                "@type": "Question",
+                "name": "¿Puedo convertir varios XML a la vez?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Sí. Puedes cargar hasta 100 comprobantes por tanda y descargar todos los PDF juntos en un ZIP." }
+              },
+              {
+                "@type": "Question",
+                "name": "¿El PDF reemplaza al comprobante electrónico?",
+                "acceptedAnswer": { "@type": "Answer", "text": "No. El PDF es una representación impresa; el comprobante con validez tributaria es el XML." }
+              },
+              {
+                "@type": "Question",
+                "name": "¿Tiene algún costo?",
+                "acceptedAnswer": { "@type": "Answer", "text": "No. Es una herramienta gratuita y de código abierto, sin registro." }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <header class="nav">
@@ -19,6 +88,7 @@
         <a href="#convertir">Convertir</a>
         <a href="#formatos">Formatos</a>
         <a href="#personalizar">Personalizar</a>
+        <a href="#preguntas">Preguntas</a>
       </nav>
       <span class="nav-rule" aria-hidden="true"></span>
       <a class="button dark" href="#convertir">Convertir XML</a>
@@ -163,8 +233,41 @@
       </section>
     </main>
 
+    <section id="preguntas" class="faq-section">
+      <div class="card light wide">
+        <p class="eyebrow">Preguntas frecuentes</p>
+        <h2>XML de SUNAT a PDF</h2>
+        <dl class="faq">
+          <div>
+            <dt>¿Cómo convierto el XML de una factura electrónica de SUNAT a PDF?</dt>
+            <dd>Pega el contenido del XML, arrástralo o elige el archivo, y presiona Convertir. Verás la vista previa en A4, A5, ticket de 80 mm y ticket de 58 mm, y podrás guardar o imprimir cada una.</dd>
+          </div>
+          <div>
+            <dt>¿Mis comprobantes se suben a algún servidor?</dt>
+            <dd>No. El PDF se genera en tu propio equipo, dentro del navegador. Los archivos no salen de tu computadora.</dd>
+          </div>
+          <div>
+            <dt>¿Qué comprobantes puedo convertir?</dt>
+            <dd>Facturas, boletas de venta, notas de crédito y notas de débito electrónicas en formato UBL 2.1, sueltas o dentro de un ZIP.</dd>
+          </div>
+          <div>
+            <dt>¿Puedo convertir varios XML a la vez?</dt>
+            <dd>Sí. Puedes cargar hasta 100 comprobantes por tanda y descargar todos los PDF juntos en un ZIP.</dd>
+          </div>
+          <div>
+            <dt>¿El PDF reemplaza al comprobante electrónico?</dt>
+            <dd>No. El PDF es una representación impresa; el comprobante con validez tributaria es el XML.</dd>
+          </div>
+          <div>
+            <dt>¿Tiene algún costo?</dt>
+            <dd>No. Es una herramienta gratuita y de código abierto, sin registro.</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
     <footer class="footnote">
-      Software libre bajo licencia MIT. El PDF es una representación impresa; el comprobante válido es el XML.
+      Una herramienta de <a href="https://qlab.pe">Qlab</a> by <a href="https://qodi.pe">Qodi</a>. Software libre bajo licencia MIT. El PDF es una representación impresa; el comprobante válido es el XML.
     </footer>
 
     <script type="module" src="app.js"></script>

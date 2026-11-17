@@ -936,6 +936,34 @@ details[open] summary .round svg {
   accent-color: var(--ink);
 }
 
+.faq-section {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 22px 22px;
+}
+
+.faq {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 36px;
+  margin: 22px 0 0;
+}
+
+.faq dt {
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+.faq dd {
+  margin: 0;
+  color: var(--muted);
+}
+
+.footnote a {
+  color: var(--ink);
+  font-weight: 600;
+}
+
 .footnote {
   max-width: 1320px;
   margin: 0 auto;
@@ -1005,7 +1033,8 @@ details[open] summary .round svg {
   }
 
   .formats,
-  .options {
+  .options,
+  .faq {
     grid-template-columns: 1fr;
   }
 

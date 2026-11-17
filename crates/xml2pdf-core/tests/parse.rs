@@ -317,3 +317,30 @@ fn keeps_document_identifiers_out_of_file_paths() {
 
     assert_eq!(doc.file_stem(), "___20123456789-01-______F001_1");
 }
+
+#[test]
+fn refuses_archives_that_expand_beyond_the_limits() {
+    let options = zip::write::SimpleFileOptions::default();
+
+    // One entry far larger than any real document.
+    let mut writer = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
+    writer.start_file("enorme.xml", options).unwrap();
+    writer.write_all(&vec![b' '; 21 * 1024 * 1024]).unwrap();
+    let oversized = writer.finish().unwrap().into_inner();
+    assert!(oversized.len() < 1024 * 1024, "the archive itself is small");
+    assert!(
+        matches!(xml_sources("bomba.zip", &oversized), Err(ArchiveError::TooLarge(name)) if name == "enorme.xml")
+    );
+
+    // More documents than one archive may hold.
+    let mut writer = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
+    for index in 0..1001 {
+        writer.start_file(format!("{index}.xml"), options).unwrap();
+        writer.write_all(b"<Invoice/>").unwrap();
+    }
+    let crowded = writer.finish().unwrap().into_inner();
+    assert!(matches!(
+        xml_sources("muchos.zip", &crowded),
+        Err(ArchiveError::TooMany)
+    ));
+}

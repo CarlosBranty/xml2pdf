@@ -9,7 +9,17 @@ pub enum ArchiveError {
     Zip(String),
     #[error("the ZIP file does not contain any XML document")]
     Empty,
+    #[error("`{0}` inside the ZIP file is larger than 20 MB, too large for an electronic document")]
+    TooLarge(String),
+    #[error("the ZIP file holds more than 1000 documents; split it into smaller files")]
+    TooMany,
 }
+
+/// Largest XML accepted from an archive. Real documents are a few hundred
+/// kilobytes; the cap stops a small ZIP from expanding into gigabytes.
+const MAX_XML_BYTES: u64 = 20 * 1024 * 1024;
+/// Most documents accepted from one archive.
+const MAX_DOCUMENTS: usize = 1000;
 
 /// An XML document found in the input, with the name it had there.
 #[derive(Debug, Clone)]
@@ -42,10 +52,19 @@ pub fn xml_sources(name: &str, bytes: &[u8]) -> Result<Vec<XmlSource>, ArchiveEr
         if !entry.is_file() || !lowered.ends_with(".xml") || lowered.starts_with("r-") {
             continue;
         }
+        if sources.len() == MAX_DOCUMENTS {
+            return Err(ArchiveError::TooMany);
+        }
+        // The size declared in the archive cannot be trusted, so the read itself is capped.
         let mut content = Vec::new();
         entry
+            .by_ref()
+            .take(MAX_XML_BYTES + 1)
             .read_to_end(&mut content)
             .map_err(|err| ArchiveError::Zip(err.to_string()))?;
+        if content.len() as u64 > MAX_XML_BYTES {
+            return Err(ArchiveError::TooLarge(entry_name));
+        }
         sources.push(XmlSource {
             name: entry_name,
             bytes: content,

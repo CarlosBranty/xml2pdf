@@ -259,6 +259,7 @@ fn applies_the_settings_to_the_template_data() {
         issuer_lines: vec!["Tel. 01 555 0100".to_owned()],
         footer: Some("Gracias por su compra".to_owned()),
         show_qr: false,
+        ..Settings::default()
     };
     let options = RenderOptions {
         settings,
@@ -270,7 +271,7 @@ fn applies_the_settings_to_the_template_data() {
     assert_eq!(data["format"], "ticket58");
     assert_eq!(
         data["page"],
-        serde_json::json!({ "width": 58, "ticket": true })
+        serde_json::json!({ "width": 58, "ticket": true, "paper": null })
     );
     assert_eq!(
         data["issuer"]["extra"],
@@ -317,17 +318,24 @@ fn renders_with_a_custom_template() {
 }
 
 #[test]
-fn offers_the_built_in_templates_as_a_starting_point() {
-    let page = builtin_template(PaperFormat::A4);
-    let ticket = builtin_template(PaperFormat::Ticket80);
+fn offers_the_built_in_template_as_a_starting_point() {
+    let template = builtin_template(PaperFormat::A4);
+    assert!(
+        template.contains("d.design.rows"),
+        "the template draws a design"
+    );
+    for format in PaperFormat::ALL {
+        assert_eq!(
+            builtin_template(format),
+            template,
+            "one template serves {format}"
+        );
+    }
 
-    assert_eq!(page, builtin_template(PaperFormat::A5));
-    assert_eq!(ticket, builtin_template(PaperFormat::Ticket58));
-    assert_ne!(page, ticket);
-
+    // Used as a custom template, it renders like the built-in one.
     let document = parse_bytes(&fixture("boleta.xml")).unwrap();
     let options = RenderOptions {
-        template: Some(ticket.to_owned()),
+        template: Some(template.to_owned()),
         ..options(PaperFormat::Ticket80)
     };
     assert!(render(&document, &options).unwrap().starts_with(b"%PDF-"));
@@ -342,7 +350,7 @@ fn validates_settings() {
 
     for invalid in [
         r#"{"formato":"a4"}"#,
-        r#"{"format":"letter"}"#,
+        r#"{"format":"legal"}"#,
         r##"{"accent_color":"#aa0000"}"##,
     ] {
         assert!(
@@ -359,7 +367,7 @@ fn parses_format_names() {
     }
     assert_eq!(PaperFormat::from_str("A4").unwrap(), PaperFormat::A4);
     assert!(
-        matches!(PaperFormat::from_str("letter"), Err(RenderError::UnknownFormat(name)) if name == "letter")
+        matches!(PaperFormat::from_str("legal"), Err(RenderError::UnknownFormat(name)) if name == "legal")
     );
 }
 

@@ -25,7 +25,7 @@ enum Command {
     Convert(ConvertArgs),
     /// Print the built-in Typst template of a format, to start a custom one
     Template {
-        /// Paper format: a4, a5, ticket80 or ticket58
+        /// Paper format: a4, a5, letter, ticket80 or ticket58
         #[arg(short, long, default_value = "a4")]
         format: PaperFormat,
     },
@@ -80,7 +80,7 @@ struct StyleArgs {
     /// JSON configuration file; the options below override it
     #[arg(short, long)]
     config: Option<PathBuf>,
-    /// Paper format: a4, a5, ticket80 or ticket58
+    /// Paper format: a4, a5, letter, ticket80 or ticket58
     #[arg(short, long)]
     format: Option<PaperFormat>,
     /// Logo image (PNG, JPEG, GIF, WebP or SVG)

@@ -7,8 +7,8 @@ use rust_decimal::Decimal;
 use serde_json::{Value, json};
 use xml2pdf_core::{Document, DocumentKind, Line, PaymentForm, catalog, tax_scheme, words};
 
-use crate::RenderOptions;
 use crate::format::{date, decimals, money, money_with_symbol, quantity};
+use crate::{Family, RenderOptions};
 
 /// Credit printed at the end of every document, followed by the addresses.
 const CREDIT_TEXT: &str = "PDF generado por qxml2pdf · Qlab by Qodi. Visítanos:";
@@ -19,6 +19,16 @@ const AMOUNT_IN_WORDS: &str = "1000";
 
 /// Returns the template data for a document.
 pub fn template_data(document: &Document, options: &RenderOptions) -> Value {
+    template_data_for(document, options, false)
+}
+
+/// Template data, optionally asking the template to mark where each block of
+/// the design lands (`editor`), which the format designer needs.
+pub(crate) fn template_data_for(
+    document: &Document,
+    options: &RenderOptions,
+    editor: bool,
+) -> Value {
     let settings = &options.settings;
     let symbol = catalog::currency_symbol(&document.currency);
     let title = catalog::document_title(&document.type_code);
@@ -26,7 +36,13 @@ pub fn template_data(document: &Document, options: &RenderOptions) -> Value {
 
     json!({
         "format": settings.format.as_str(),
-        "page": { "width": settings.format.width_mm(), "ticket": settings.format.is_ticket() },
+        "page": {
+            "width": settings.format.width_mm(),
+            "ticket": settings.format.is_ticket(),
+            "paper": settings.format.typst_paper(),
+        },
+        "design": settings.design_for(settings.format).resolved(Family::of(settings.format)),
+        "editor": editor,
         "logo": options.logo.as_ref().map(|logo| logo.file_name()),
         "qr": settings.show_qr.then_some("qr.svg"),
         "doc": {

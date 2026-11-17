@@ -6,6 +6,7 @@
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod config;
+mod design;
 pub mod format;
 mod view;
 mod world;
@@ -14,17 +15,23 @@ use std::fmt;
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
+use typst::foundations::{Label, Selector};
+use typst::introspection::{Introspector, MetadataElem};
 use typst::layout::Abs;
+use typst::utils::PicoStr;
 use typst_layout::PagedDocument;
 use typst_pdf::PdfOptions;
 use typst_svg::SvgOptions;
 use xml2pdf_core::{ArchiveError, Document, ParseError};
 
+pub use design::{
+    Align, Block, BlockKind, BoxStyle, Design, Family, HeadingStyle, ItemColumn, Preset, Row,
+    Style, TextSize, catalog as design_catalog,
+};
 pub use view::{document_summary, template_data};
 use world::TemplateWorld;
 
-const PAGE_TEMPLATE: &str = include_str!("../templates/page.typ");
-const TICKET_TEMPLATE: &str = include_str!("../templates/ticket.typ");
+const TEMPLATE: &str = include_str!("../templates/document.typ");
 
 /// Paper formats supported by the built-in templates.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -33,6 +40,8 @@ pub enum PaperFormat {
     #[default]
     A4,
     A5,
+    /// US letter, 216 x 279 mm.
+    Letter,
     /// Thermal paper roll, 80 mm wide.
     Ticket80,
     /// Thermal paper roll, 58 mm wide.
@@ -40,9 +49,10 @@ pub enum PaperFormat {
 }
 
 impl PaperFormat {
-    pub const ALL: [PaperFormat; 4] = [
+    pub const ALL: [PaperFormat; 5] = [
         PaperFormat::A4,
         PaperFormat::A5,
+        PaperFormat::Letter,
         PaperFormat::Ticket80,
         PaperFormat::Ticket58,
     ];
@@ -52,6 +62,7 @@ impl PaperFormat {
         match self {
             PaperFormat::A4 => "a4",
             PaperFormat::A5 => "a5",
+            PaperFormat::Letter => "letter",
             PaperFormat::Ticket80 => "ticket80",
             PaperFormat::Ticket58 => "ticket58",
         }
@@ -62,8 +73,19 @@ impl PaperFormat {
         match self {
             PaperFormat::A4 => 210,
             PaperFormat::A5 => 148,
+            PaperFormat::Letter => 216,
             PaperFormat::Ticket80 => 80,
             PaperFormat::Ticket58 => 58,
+        }
+    }
+
+    /// Name of the paper in Typst, for the formats that are fixed pages.
+    pub(crate) fn typst_paper(self) -> Option<&'static str> {
+        match self {
+            PaperFormat::A4 => Some("a4"),
+            PaperFormat::A5 => Some("a5"),
+            PaperFormat::Letter => Some("us-letter"),
+            PaperFormat::Ticket80 | PaperFormat::Ticket58 => None,
         }
     }
 
@@ -100,6 +122,10 @@ pub struct Settings {
     /// Extra text printed at the end of the document.
     pub footer: Option<String>,
     pub show_qr: bool,
+    /// Design of the page formats. `None` uses the classic design.
+    pub page_design: Option<Design>,
+    /// Design of the ticket formats. `None` uses the classic design.
+    pub ticket_design: Option<Design>,
 }
 
 impl Default for Settings {
@@ -109,6 +135,8 @@ impl Default for Settings {
             issuer_lines: Vec::new(),
             footer: None,
             show_qr: true,
+            page_design: None,
+            ticket_design: None,
         }
     }
 }
@@ -116,7 +144,29 @@ impl Default for Settings {
 impl Settings {
     /// Parses settings from JSON. Unknown keys are rejected so typos surface.
     pub fn from_json(json: &str) -> Result<Self, RenderError> {
-        serde_json::from_str(json).map_err(|err| RenderError::Settings(err.to_string()))
+        let settings: Settings =
+            serde_json::from_str(json).map_err(|err| RenderError::Settings(err.to_string()))?;
+        settings.validate()?;
+        Ok(settings)
+    }
+
+    pub fn validate(&self) -> Result<(), RenderError> {
+        [&self.page_design, &self.ticket_design]
+            .into_iter()
+            .flatten()
+            .try_for_each(Design::validate)
+    }
+
+    /// The design used for a format: the chosen one, or the classic preset.
+    pub fn design_for(&self, format: PaperFormat) -> Design {
+        let family = Family::of(format);
+        let chosen = match family {
+            Family::Page => &self.page_design,
+            Family::Ticket => &self.ticket_design,
+        };
+        chosen
+            .clone()
+            .unwrap_or_else(|| Design::preset(Preset::Clasico, family))
     }
 }
 
@@ -162,10 +212,12 @@ pub struct RenderOptions {
 
 #[derive(Debug, thiserror::Error)]
 pub enum RenderError {
-    #[error("unknown format `{0}`: expected a4, a5, ticket80 or ticket58")]
+    #[error("unknown format `{0}`: expected a4, a5, letter, ticket80 or ticket58")]
     UnknownFormat(String),
     #[error("invalid settings: {0}")]
     Settings(String),
+    #[error("invalid design: {0}")]
+    Design(String),
     #[error("unsupported logo: expected a PNG, JPEG, GIF, WebP or SVG image")]
     UnsupportedLogo,
     #[error("the QR code cannot be generated: {0}")]
@@ -205,7 +257,7 @@ pub fn convert(
     bytes: &[u8],
     options: &RenderOptions,
 ) -> Result<Vec<Rendered>, ConvertError> {
-    convert_each(name, bytes, options, false)
+    convert_each(name, bytes, options, Mode::Pdf)
 }
 
 /// Like [`convert`], and also draws each document as an SVG image so a user
@@ -215,14 +267,14 @@ pub fn convert_with_preview(
     bytes: &[u8],
     options: &RenderOptions,
 ) -> Result<Vec<Rendered>, ConvertError> {
-    convert_each(name, bytes, options, true)
+    convert_each(name, bytes, options, Mode::Preview)
 }
 
 fn convert_each(
     name: &str,
     bytes: &[u8],
     options: &RenderOptions,
-    with_preview: bool,
+    mode: Mode,
 ) -> Result<Vec<Rendered>, ConvertError> {
     xml2pdf_core::xml_sources(name, bytes)?
         .into_iter()
@@ -232,11 +284,10 @@ fn convert_each(
                     name: source.name.clone(),
                     source: err,
                 })?;
-            let output =
-                compile(&document, options, with_preview).map_err(|err| ConvertError::Render {
-                    name: source.name.clone(),
-                    source: err,
-                })?;
+            let output = compile(&document, options, mode).map_err(|err| ConvertError::Render {
+                name: source.name.clone(),
+                source: err,
+            })?;
             Ok(Rendered {
                 source_name: source.name,
                 file_stem: document.file_stem(),
@@ -248,18 +299,49 @@ fn convert_each(
         .collect()
 }
 
-/// Source of the built-in template for a format, a starting point for custom templates.
-pub fn builtin_template(format: PaperFormat) -> &'static str {
-    if format.is_ticket() {
-        TICKET_TEMPLATE
-    } else {
-        PAGE_TEMPLATE
-    }
+/// Source of the built-in template, a starting point for custom templates.
+/// One template draws every format; the format only changes the page setup.
+pub fn builtin_template(_format: PaperFormat) -> &'static str {
+    TEMPLATE
+}
+
+/// What the format designer shows: the document drawn as SVG and where each
+/// block of the design landed.
+#[derive(Debug, Clone)]
+pub struct DesignPreview {
+    /// Every page drawn as one SVG image.
+    pub svg: String,
+    /// Size of that image in points.
+    pub width_pt: f64,
+    pub height_pt: f64,
+    pub blocks: Vec<BlockRect>,
+}
+
+/// Place of a block inside the preview image, in points from its top left corner.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct BlockRect {
+    /// Identifier of the block in the design: `r<row>b<block>`.
+    pub id: String,
+    pub x: f64,
+    pub y: f64,
+    pub width: f64,
+    pub height: f64,
+}
+
+/// Renders a document for the format designer.
+pub fn design_preview(
+    document: &Document,
+    options: &RenderOptions,
+) -> Result<DesignPreview, RenderError> {
+    let output = compile(document, options, Mode::Designer)?;
+    Ok(output
+        .designer
+        .expect("the designer mode produces a preview"))
 }
 
 /// Renders a document to PDF bytes.
 pub fn render(document: &Document, options: &RenderOptions) -> Result<Vec<u8>, RenderError> {
-    compile(document, options, false).map(|output| output.pdf)
+    compile(document, options, Mode::Pdf).map(|output| output.pdf)
 }
 
 /// Result of compiling one document.
@@ -269,6 +351,17 @@ struct Output {
     /// continuous ticket paper.
     page_mm: (f64, f64),
     preview_svg: Option<String>,
+    designer: Option<DesignPreview>,
+}
+
+/// What a compilation produces besides the PDF.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Mode {
+    Pdf,
+    /// Also an SVG image of the document.
+    Preview,
+    /// An SVG image with the place of every block, for the format designer.
+    Designer,
 }
 
 /// Gap between pages in the SVG preview.
@@ -277,9 +370,10 @@ const PREVIEW_PAGE_GAP_PT: f64 = 12.0;
 fn compile(
     document: &Document,
     options: &RenderOptions,
-    with_preview: bool,
+    mode: Mode,
 ) -> Result<Output, RenderError> {
-    let data = template_data(document, options);
+    options.settings.validate()?;
+    let data = view::template_data_for(document, options, mode == Mode::Designer);
     let mut files = vec![("data.json".to_owned(), data.to_string().into_bytes())];
     if options.settings.show_qr {
         files.push((
@@ -314,15 +408,60 @@ fn compile(
         .map(|page| page.frame.size())
         .map(|size| (size.x.to_mm(), size.y.to_mm()))
         .unwrap_or_default();
-    let preview_svg = with_preview.then(|| {
-        typst_svg::svg_merged(&paged, &SvgOptions::default(), Abs::pt(PREVIEW_PAGE_GAP_PT))
+    let draw =
+        || typst_svg::svg_merged(&paged, &SvgOptions::default(), Abs::pt(PREVIEW_PAGE_GAP_PT));
+    let preview_svg = (mode == Mode::Preview).then(draw);
+    let designer = (mode == Mode::Designer).then(|| {
+        let (width_pt, height_pt, blocks) = block_rects(&paged);
+        DesignPreview {
+            svg: draw(),
+            width_pt,
+            height_pt,
+            blocks,
+        }
     });
     let pdf = typst_pdf::pdf(&paged, &PdfOptions::default()).map_err(|err| describe(&err))?;
     Ok(Output {
         pdf,
         page_mm,
         preview_svg,
+        designer,
     })
+}
+
+/// Size of the merged preview image and the place of each block the template
+/// marked, in points. Pages are stacked from the top with a fixed gap.
+fn block_rects(paged: &PagedDocument) -> (f64, f64, Vec<BlockRect>) {
+    let mut page_tops = Vec::new();
+    let (mut width, mut height) = (0.0_f64, 0.0_f64);
+    for (index, page) in paged.pages().iter().enumerate() {
+        if index > 0 {
+            height += PREVIEW_PAGE_GAP_PT;
+        }
+        page_tops.push(height);
+        let size = page.frame.size();
+        width = width.max(size.x.to_pt());
+        height += size.y.to_pt();
+    }
+
+    let label = Label::new(PicoStr::intern("block")).expect("the label is not empty");
+    let introspector = paged.introspector();
+    let blocks = introspector
+        .query(&Selector::Label(label))
+        .iter()
+        .filter_map(|content| {
+            let position = introspector.position(content.location()?)?;
+            let value = serde_json::to_value(&content.to_packed::<MetadataElem>()?.value).ok()?;
+            Some(BlockRect {
+                id: value.get("id")?.as_str()?.to_owned(),
+                x: position.point.x.to_pt(),
+                y: page_tops.get(position.page.get() - 1)? + position.point.y.to_pt(),
+                width: value.get("w")?.as_f64()?,
+                height: value.get("h")?.as_f64()?,
+            })
+        })
+        .collect();
+    (width, height, blocks)
 }
 
 fn qr_svg(payload: &str) -> Result<String, RenderError> {

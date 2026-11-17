@@ -162,9 +162,9 @@ fn rejects_invalid_style_options() {
             .args(extra))
     };
 
-    let (code, _, stderr) = convert(&["--format", "letter"]);
+    let (code, _, stderr) = convert(&["--format", "legal"]);
     assert_eq!(code, 2);
-    assert!(stderr.contains("unknown format `letter`"), "{stderr}");
+    assert!(stderr.contains("unknown format `legal`"), "{stderr}");
 
     let (code, _, stderr) = convert(&["--accent", "#aa0000"]);
     assert_eq!(code, 2, "documents have no color option");

@@ -24,6 +24,8 @@ pub enum ConfigError {
     Copies,
     #[error(transparent)]
     Render(#[from] xml2pdf_render::config::ConfigError),
+    #[error(transparent)]
+    Settings(#[from] xml2pdf_render::RenderError),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -99,7 +101,7 @@ impl AutoConfig {
         if !(1..=20).contains(&self.copies) {
             return Err(ConfigError::Copies);
         }
-        Ok(())
+        Ok(self.settings.validate()?)
     }
 
     /// Folder receiving the PDFs for a given input file.

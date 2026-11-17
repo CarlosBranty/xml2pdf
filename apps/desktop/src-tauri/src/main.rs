@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 use xml2pdf_auto::{AutoConfig, PrintJob, Printer, SystemPrinter, WatchHandle, media_for, watch};
-use xml2pdf_render::{Logo, PaperFormat, Settings};
+use xml2pdf_render::{Design, Logo, PaperFormat, Settings};
 
 /// Event sent to the window for every file the watcher processes.
 const WATCH_EVENT: &str = "watch-event";
@@ -58,6 +58,11 @@ struct RenderChoices {
     logo: Option<Vec<u8>>,
     /// Custom Typst template for the watched format, or `None` for the built-in one.
     template: Option<String>,
+    /// Designs made in the format designer, or `None` for the classic ones.
+    #[serde(default)]
+    page_design: Option<Design>,
+    #[serde(default)]
+    ticket_design: Option<Design>,
 }
 
 fn lock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -115,6 +120,8 @@ fn build_config(
             issuer_lines: render.issuer_lines,
             footer: render.footer,
             show_qr: render.show_qr,
+            page_design: render.page_design,
+            ticket_design: render.ticket_design,
         },
         logo: store(LOGO_FILE, render.logo.as_deref())?,
         template: store(TEMPLATE_FILE, render.template.as_deref().map(str::as_bytes))?,
@@ -370,6 +377,8 @@ mod tests {
             show_qr: false,
             logo: logo.map(<[u8]>::to_vec),
             template: template.map(str::to_owned),
+            page_design: None,
+            ticket_design: None,
         }
     }
 

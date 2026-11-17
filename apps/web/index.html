@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="es-PE">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Convertir XML de SUNAT a PDF gratis | xml2pdf · Qlab by Qodi</title>
+    <meta name="description" content="Convierte gratis el XML de tu factura, boleta, nota de crédito o nota de débito electrónica de SUNAT a PDF imprimible en A4, A5, Carta o ticket de 80 y 58 mm. Sin registro y sin subir tus archivos." />
+    <meta name="robots" content="index, follow" />
+    <meta name="author" content="Qodi" />
+    <meta name="theme-color" content="#f1dbe1" />
+    <link rel="canonical" href="__SITE_URL__/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="es_PE" />
+    <meta property="og:site_name" content="Qlab by Qodi" />
+    <meta property="og:title" content="Convertir XML de SUNAT a PDF gratis" />
+    <meta property="og:description" content="Factura, boleta y notas electrónicas de SUNAT a PDF imprimible en A4, A5 o ticket. Gratis, sin registro y sin subir tus archivos." />
+    <meta property="og:url" content="__SITE_URL__/" />
+    <meta property="og:image" content="__SITE_URL__/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Convertir XML de SUNAT a PDF gratis" />
+    <meta name="twitter:description" content="Factura, boleta y notas electrónicas de SUNAT a PDF imprimible en A4, A5 o ticket. Gratis y sin subir tus archivos." />
+    <meta name="twitter:image" content="__SITE_URL__/og.png" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebApplication",
+            "name": "xml2pdf",
+            "url": "__SITE_URL__/",
+            "description": "Convierte el XML de comprobantes electrónicos de SUNAT (factura, boleta, nota de crédito y nota de débito) a PDF imprimible en A4, A5 o ticket.",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web, Windows, macOS, Linux",
+            "inLanguage": "es-PE",
+            "isAccessibleForFree": true,
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "PEN" },
+            "publisher": { "@type": "Organization", "name": "Qodi", "url": "https://qodi.pe" }
+          },
+          {
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "¿Cómo convierto el XML de una factura electrónica de SUNAT a PDF?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Pega el contenido del XML, arrástralo o elige el archivo, y presiona Convertir. Verás la vista previa en A4, A5, Carta, ticket de 80 mm y ticket de 58 mm, y podrás guardar o imprimir cada una." }
+              },
+              {
+                "@type": "Question",
+                "name": "¿Mis comprobantes se suben a algún servidor?",
+                "acceptedAnswer": { "@type": "Answer", "text": "No. El PDF se genera en tu propio equipo, dentro del navegador. Los archivos no salen de tu computadora." }
+              },
+              {
+                "@type": "Question",
+                "name": "¿Qué comprobantes puedo convertir?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Facturas, boletas de venta, notas de crédito y notas de débito electrónicas en formato UBL 2.1, sueltas o dentro de un ZIP." }
+              },
+              {
+                "@type": "Question",
+                "name": "¿Puedo convertir varios XML a la vez?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Sí. Puedes cargar hasta 100 comprobantes por tanda y descargar todos los PDF juntos en un ZIP." }
+              },
+              {
+                "@type": "Question",
+                "name": "¿El PDF reemplaza al comprobante electrónico?",
+                "acceptedAnswer": { "@type": "Answer", "text": "No. El PDF es una representación impresa; el comprobante con validez tributaria es el XML." }
+              },
+              {
+                "@type": "Question",
+                "name": "¿Tiene algún costo?",
+                "acceptedAnswer": { "@type": "Answer", "text": "No. Es una herramienta gratuita y de código abierto, sin registro." }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <header class="nav">
+      <a class="brand" href="./" aria-label="xml2pdf, inicio">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 3h12l7 7v19H7z" fill="currentColor" /><path d="M19 3v7h7" fill="#efedeb" /><path d="M11 16h10M11 20.5h10M11 25h6" stroke="#efedeb" stroke-width="2.2" stroke-linecap="round" /></svg>
+        <strong>xml2pdf</strong>
+        <small>XML SUNAT → PDF</small>
+      </a>
+      <nav aria-label="Secciones">
+        <a href="#convertir">Convertir</a>
+        <a href="#disenador">Diseñador</a>
+        <a href="#personalizar">Personalizar</a>
+        <a href="#preguntas">Preguntas</a>
+      </nav>
+      <span class="nav-rule" aria-hidden="true"></span>
+      <a class="button dark" href="#convertir">Convertir XML</a>
+    </header>
+
+    <main class="bento">
+      <section id="convertir" class="card hero">
+        <div class="hero-copy">
+          <p class="eyebrow">De XML SUNAT a PDF imprimible</p>
+          <h1>Convierte<br />tu XML<br />en PDF</h1>
+          <div class="hero-actions">
+            <button id="convert" type="button" class="button cta" disabled>
+              Convertir
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg>
+            </button>
+            <button id="pick-round" type="button" class="round" aria-label="Seleccionar un archivo XML o ZIP">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5M7.5 9.5 12 5l4.5 4.5M5 19h14" /></svg>
+            </button>
+          </div>
+          <p id="status" class="status" role="status">Cargando motor…</p>
+        </div>
+
+        <div id="dropzone" class="hero-input">
+          <label class="eyebrow" for="xml-text">Pega, arrastra o elige tu XML</label>
+          <textarea id="xml-text" spellcheck="false" placeholder="Pega aquí el contenido del XML…"></textarea>
+          <ul id="files" class="chips" aria-label="Archivos elegidos"></ul>
+          <div class="input-row">
+            <button id="pick" type="button" class="button outline">Seleccionar archivo</button>
+            <span class="hint">o arrastra aquí tus XML o un ZIP · hasta 100 comprobantes por tanda</span>
+          </div>
+          <input id="file-input" type="file" accept=".xml,.zip,text/xml,application/zip" multiple hidden />
+        </div>
+
+        <span class="decor blob" aria-hidden="true"></span>
+        <span class="decor dot-a" aria-hidden="true"></span>
+        <span class="decor dot-b" aria-hidden="true"></span>
+        <svg class="decor arrow" viewBox="0 0 220 110" aria-hidden="true"><path d="M8 100C30 30 110 6 168 46l14-22 26 70-74-8 16-20C104 38 52 52 34 104z" /></svg>
+      </section>
+
+      <section id="resultado" class="card results" hidden>
+        <header class="results-head">
+          <div>
+            <p class="eyebrow">Resultado</p>
+            <h2 id="results-title">Elige tu formato</h2>
+          </div>
+        </header>
+        <p id="notice" class="notice" hidden></p>
+        <ul id="errors" class="errors"></ul>
+        <div id="batch" class="batch" hidden>
+          <ul id="documents" class="doc-list" aria-label="Comprobantes de la tanda"></ul>
+          <div class="bulk">
+            <label for="bulk-format">Guardar todos en</label>
+            <select id="bulk-format">
+              <option value="a4">A4</option>
+              <option value="a5">A5</option>
+              <option value="letter">Carta</option>
+              <option value="ticket80">Ticket 80 mm</option>
+              <option value="ticket58">Ticket 58 mm</option>
+            </select>
+            <button id="save-all" type="button" class="button dark">Guardar todos (ZIP)</button>
+            <span id="bulk-status" class="hint" role="status"></span>
+          </div>
+        </div>
+        <div id="formats" class="formats"></div>
+        <p id="save-hint" class="hint"></p>
+      </section>
+
+      <section id="disenador" class="card wide designer">
+        <header class="results-head">
+          <div>
+            <p class="eyebrow">Diseñador de formato</p>
+            <h2>Arma tu comprobante</h2>
+          </div>
+          <div class="inline">
+            <label for="design-format">Formato</label>
+            <select id="design-format">
+              <option value="a4">A4</option>
+              <option value="a5">A5</option>
+              <option value="letter">Carta</option>
+              <option value="ticket80">Ticket 80 mm</option>
+              <option value="ticket58">Ticket 58 mm</option>
+            </select>
+          </div>
+        </header>
+        <p class="hint">Arrastra un bloque sobre la vista previa para moverlo: suéltalo arriba o abajo de otro para darle su propia fila, o a un lado para ponerlos juntos. Haz clic en un bloque para editarlo.</p>
+
+        <div class="designer-body">
+          <div class="designer-stage">
+            <div id="design-canvas" class="design-canvas">
+              <img id="design-image" alt="Vista previa del diseño" />
+              <div id="design-overlays"></div>
+            </div>
+            <p id="design-error" class="status error" role="status"></p>
+          </div>
+
+          <aside class="designer-panel" aria-label="Opciones del diseño">
+            <div class="group">
+              <p class="group-title">Estilos listos</p>
+              <div id="design-presets" class="pills"></div>
+            </div>
+
+            <div class="group">
+              <p class="group-title">Estilo</p>
+              <div class="pair">
+                <label for="design-text">Tamaño de letra</label>
+                <select id="design-text">
+                  <option value="small">Pequeña</option>
+                  <option value="normal">Normal</option>
+                  <option value="large">Grande</option>
+                </select>
+                <label for="design-boxes">Recuadros</label>
+                <select id="design-boxes">
+                  <option value="rounded">Redondeados</option>
+                  <option value="square">Rectos</option>
+                  <option value="lines">Solo líneas</option>
+                  <option value="none">Sin recuadros</option>
+                </select>
+                <label for="design-heading">Encabezados</label>
+                <select id="design-heading">
+                  <option value="shaded">Gris</option>
+                  <option value="inverted">Negro</option>
+                  <option value="plain">Sin fondo</option>
+                </select>
+              </div>
+              <label class="check"><input id="design-stripes" type="checkbox" /> Filas alternadas en la tabla</label>
+              <label class="check"><input id="design-filler" type="checkbox" /> Completar la tabla con filas vacías</label>
+            </div>
+
+            <div id="design-block" class="group selected-block" hidden>
+              <p class="group-title">Bloque: <span id="design-block-name"></span></p>
+              <div class="pair">
+                <label for="design-block-width">Ancho en su fila (1 a 6)</label>
+                <input id="design-block-width" type="number" min="1" max="6" step="1" />
+                <label for="design-block-boxed">Recuadro</label>
+                <select id="design-block-boxed">
+                  <option value="">Según el estilo</option>
+                  <option value="true">Con recuadro</option>
+                  <option value="false">Sin recuadro</option>
+                </select>
+                <label for="design-block-align">Alineación</label>
+                <select id="design-block-align">
+                  <option value="">Según el bloque</option>
+                  <option value="left">Izquierda</option>
+                  <option value="center">Centro</option>
+                  <option value="right">Derecha</option>
+                </select>
+              </div>
+              <div id="design-block-text-field" class="field" hidden>
+                <label for="design-block-text">Texto</label>
+                <textarea id="design-block-text" rows="3"></textarea>
+              </div>
+              <div id="design-block-columns-field" class="field" hidden>
+                <p class="group-title">Columnas de la tabla</p>
+                <div id="design-block-columns"></div>
+              </div>
+              <button id="design-block-remove" type="button" class="button outline small">Quitar bloque</button>
+            </div>
+
+            <div class="group">
+              <p class="group-title">Agregar bloque</p>
+              <div id="design-palette" class="pills"></div>
+            </div>
+
+            <div class="group">
+              <p class="group-title">Estructura</p>
+              <ol id="design-structure" class="structure"></ol>
+            </div>
+
+            <div class="actions">
+              <button id="design-reset" type="button" class="button outline small">Restablecer</button>
+              <button id="design-export" type="button" class="button outline small">Exportar</button>
+              <button id="design-import" type="button" class="button outline small">Importar</button>
+              <input id="design-import-file" type="file" accept=".json,application/json" hidden />
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="card dark">
+        <p class="eyebrow">Privacidad</p>
+        <h2>Todo en tu equipo</h2>
+        <p>El PDF se genera en tu equipo. Tus comprobantes no se suben a ningún servidor.</p>
+        <div class="badges" aria-hidden="true">
+          <span class="badge cyan">XML</span>
+          <span class="badge-line"></span>
+          <span class="badge orange">PDF</span>
+        </div>
+      </section>
+
+      <section id="formatos" class="card light">
+        <p class="eyebrow">Explora</p>
+        <h2>Formatos</h2>
+        <ul class="pills tilted">
+          <li class="pill">A4</li>
+          <li class="pill filled">A5</li>
+          <li class="pill">Carta</li>
+          <li class="pill filled">Ticket 80 mm</li>
+          <li class="pill">Ticket 58 mm</li>
+        </ul>
+      </section>
+
+      <section class="card blue">
+        <p class="eyebrow">Comprobantes</p>
+        <h2>Factura, boleta<br />+ notas</h2>
+        <p>Lee el XML UBL 2.1 de SUNAT, en UTF-8 o ISO-8859-1, suelto o dentro de un ZIP.</p>
+        <ul class="codes">
+          <li><b class="code purple">01</b>Factura</li>
+          <li><b class="code teal">03</b>Boleta</li>
+          <li><b class="code orange">07</b>N. crédito</li>
+          <li><b class="code ink">08</b>N. débito</li>
+        </ul>
+      </section>
+
+      <section id="personalizar" class="card light wide">
+        <details>
+          <summary>
+            <span>
+              <span class="eyebrow">Opcional</span>
+              <span class="summary-title">Personalizar</span>
+            </span>
+            <span class="round small" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg></span>
+          </summary>
+          <div class="options">
+            <div class="field">
+              <label for="logo">Logo</label>
+              <div class="inline">
+                <input id="logo" type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml" />
+                <button id="logo-remove" type="button" class="button outline small" hidden>Quitar</button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="issuer-lines">Datos adicionales del emisor</label>
+              <textarea id="issuer-lines" rows="3" placeholder="Una línea por dato: teléfono, correo, web…"></textarea>
+            </div>
+            <div class="field">
+              <label for="footer">Texto al pie</label>
+              <input id="footer" type="text" placeholder="Gracias por su preferencia" />
+            </div>
+            <label class="check"><input id="show-qr" type="checkbox" /> Mostrar código QR</label>
+
+            <div class="field template-field">
+              <label class="check"><input id="use-template" type="checkbox" /> Usar una plantilla propia (Typst)</label>
+              <div class="inline">
+                <label for="template-target">Reemplaza a</label>
+                <select id="template-target">
+                  <option value="page">A4 y A5</option>
+                  <option value="ticket">Tickets</option>
+                </select>
+                <button id="template-load" type="button" class="button outline small">Cargar plantilla integrada</button>
+              </div>
+              <textarea id="template" rows="12" spellcheck="false" aria-label="Plantilla Typst"></textarea>
+            </div>
+          </div>
+        </details>
+      </section>
+    </main>
+
+    <section id="preguntas" class="faq-section">
+      <div class="card light wide">
+        <p class="eyebrow">Preguntas frecuentes</p>
+        <h2>XML de SUNAT a PDF</h2>
+        <dl class="faq">
+          <div>
+            <dt>¿Cómo convierto el XML de una factura electrónica de SUNAT a PDF?</dt>
+            <dd>Pega el contenido del XML, arrástralo o elige el archivo, y presiona Convertir. Verás la vista previa en A4, A5, Carta, ticket de 80 mm y ticket de 58 mm, y podrás guardar o imprimir cada una.</dd>
+          </div>
+          <div>
+            <dt>¿Mis comprobantes se suben a algún servidor?</dt>
+            <dd>No. El PDF se genera en tu propio equipo, dentro del navegador. Los archivos no salen de tu computadora.</dd>
+          </div>
+          <div>
+            <dt>¿Qué comprobantes puedo convertir?</dt>
+            <dd>Facturas, boletas de venta, notas de crédito y notas de débito electrónicas en formato UBL 2.1, sueltas o dentro de un ZIP.</dd>
+          </div>
+          <div>
+            <dt>¿Puedo convertir varios XML a la vez?</dt>
+            <dd>Sí. Puedes cargar hasta 100 comprobantes por tanda y descargar todos los PDF juntos en un ZIP.</dd>
+          </div>
+          <div>
+            <dt>¿El PDF reemplaza al comprobante electrónico?</dt>
+            <dd>No. El PDF es una representación impresa; el comprobante con validez tributaria es el XML.</dd>
+          </div>
+          <div>
+            <dt>¿Tiene algún costo?</dt>
+            <dd>No. Es una herramienta gratuita y de código abierto, sin registro.</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <footer class="footnote">
+      Una herramienta de <a href="https://qlab.pe">Qlab</a> by <a href="https://qodi.pe">Qodi</a>. Software libre bajo licencia MIT. El PDF es una representación impresa; el comprobante válido es el XML.
+    </footer>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,59 @@
+<section id="vigilancia" class="card light wide">
+  <div class="panel-head">
+    <div>
+      <p class="eyebrow">Impresión automática</p>
+      <h2>Vigilar una carpeta</h2>
+    </div>
+    <div class="panel-actions">
+      <span id="watch-state" class="pill">Detenida</span>
+      <button id="toggle-watch" type="button" class="button dark">Iniciar vigilancia</button>
+    </div>
+  </div>
+  <p class="hint">Cada XML o ZIP nuevo que llegue a la carpeta se convierte a PDF y, si lo activas, se imprime solo. La impresora y las copias de aquí también se usan con el botón Imprimir.</p>
+
+  <div class="options">
+    <div class="field">
+      <label>Carpeta vigilada (donde descargas los XML)</label>
+      <div class="inline">
+        <output id="watch-dir" class="path">Sin elegir</output>
+        <button id="pick-watch-dir" type="button" class="button outline small">Elegir…</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Carpeta de los PDF</label>
+      <div class="inline">
+        <output id="output-dir" class="path"></output>
+        <button id="pick-output-dir" type="button" class="button outline small">Elegir…</button>
+        <button id="reset-output-dir" type="button" class="button outline small">Predeterminada</button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="watch-format">Formato de los PDF automáticos</label>
+      <select id="watch-format">
+        <option value="a4">A4</option>
+        <option value="a5">A5</option>
+        <option value="letter">Carta</option>
+        <option value="ticket80">Ticket 80 mm</option>
+        <option value="ticket58">Ticket 58 mm</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="printer">Impresora</label>
+      <select id="printer"></select>
+      <small id="printer-error" class="field-error" hidden></small>
+    </div>
+    <div class="field">
+      <label for="copies">Copias</label>
+      <input id="copies" type="number" min="1" max="20" step="1" />
+    </div>
+    <div class="field">
+      <label class="check"><input id="auto-print" type="checkbox" /> Imprimir automáticamente cada comprobante</label>
+      <label class="check"><input id="watch-on-start" type="checkbox" /> Iniciar la vigilancia al abrir la aplicación</label>
+    </div>
+  </div>
+
+  <p id="watch-message" class="status" role="status"></p>
+  <p class="eyebrow log-title">Registro</p>
+  <ul id="watch-log" class="doc-list" aria-live="polite"></ul>
+  <p id="watch-log-empty" class="hint">Aquí aparecerán los comprobantes convertidos por la vigilancia.</p>
+</section>

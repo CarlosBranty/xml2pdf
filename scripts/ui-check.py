@@ -197,6 +197,21 @@ def verify(reports: dict, uploads: dict, scenarios: list) -> list:
     check = partial(expect, failures, "paste")
     paste = reports["paste"]
     check("Convertir is disabled without input", paste["disabledWhenEmpty"], True)
+    check("input left of the headline", paste["inputLeftOfHeadline"], True)
+    check(
+        "search metadata",
+        paste["seo"],
+        {
+            "title": "Convertir XML de SUNAT a PDF gratis | xml2pdf · Qlab by Qodi",
+            "language": "es-PE",
+            "description": True,
+            # No public address was given to this build, so none is published.
+            "canonical": None,
+            "structured": ["WebApplication", "FAQPage"],
+            "questions": 6,
+            "answersInStructuredData": 6,
+        },
+    )
     check("status", paste["status"], "Descargado: 20123456789-01-F001-00000123-a4.pdf")
     check("title", paste["title"], "Elige tu formato")
     check("formats", paste["formats"], ["A4", "A5", "Ticket 80", "Ticket 58"])

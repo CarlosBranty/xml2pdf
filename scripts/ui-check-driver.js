@@ -66,8 +66,22 @@ const scenarios = {
     await until(previewsDrawn, "the previews");
     document.querySelector(".format .save").click();
     await sleep(50);
+    const structured = JSON.parse(document.querySelector('script[type="application/ld+json"]').textContent);
     return {
       disabledWhenEmpty,
+      // The input sits to the left of the headline on a wide window.
+      inputLeftOfHeadline:
+        $("dropzone").getBoundingClientRect().right <=
+        document.querySelector(".hero-copy").getBoundingClientRect().left + 1,
+      seo: {
+        title: document.title,
+        language: document.documentElement.lang,
+        description: document.querySelector('meta[name="description"]')?.content.length > 80,
+        canonical: document.querySelector('link[rel="canonical"]')?.getAttribute("href") ?? null,
+        structured: structured["@graph"].map((item) => item["@type"]),
+        questions: document.querySelectorAll(".faq dt").length,
+        answersInStructuredData: structured["@graph"][1].mainEntity.length,
+      },
       status: $("status").textContent,
       title: $("results-title").textContent,
       formats: [...document.querySelectorAll(".format h3")].map((title) => title.textContent),

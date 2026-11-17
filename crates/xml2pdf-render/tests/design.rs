@@ -222,6 +222,15 @@ fn locates_every_visible_block_in_the_preview() {
         "the next row is below"
     );
 
+    // Thin blocks such as separator lines still get a handle that can be grabbed.
+    for preset in Preset::ALL {
+        for format in [PaperFormat::A4, PaperFormat::Ticket80] {
+            let design = Design::preset(preset, Family::of(format));
+            let preview = design_preview(&document, &options(format, Some(design))).unwrap();
+            assert!(preview.blocks.iter().all(|block| block.height >= 4.0), "{preset:?} on {format}");
+        }
+    }
+
     let note = parse_bytes(&fixture("nota-credito.xml")).unwrap();
     let with_affected = design_preview(&note, &options(PaperFormat::A4, None)).unwrap();
     assert!(

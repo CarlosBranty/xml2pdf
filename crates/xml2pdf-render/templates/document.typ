@@ -375,7 +375,8 @@
 // In the editor, each block records its place so the interface can put a
 // handle over it. The mark takes no room, so the layout does not change.
 #let marked(b, width, body) = if d.editor {
-  let height = measure(width: width, body).height
+  // A separator line has no height of its own; it still needs a handle.
+  let height = calc.max(measure(width: width, body).height, 4pt)
   block(width: 100%, {
     place(top + left, [#metadata((id: b.id, w: width.pt(), h: height.pt())) <block>])
     body

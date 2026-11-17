@@ -2,7 +2,6 @@
 
 Los cambios notables de cada versión se anotan aquí. El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa [versionado semántico](https://semver.org/lang/es/).
 
-## [Sin publicar]
 
 ### Añadido
 

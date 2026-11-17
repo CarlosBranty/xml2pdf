@@ -177,7 +177,8 @@ const scenarios = {
       header: header(saved.bytes),
     };
 
-    cards[2].querySelectorAll("button")[1].click();
+    const ticket = cards.find((card) => card.querySelector("h3").textContent === "Ticket 80");
+    ticket.querySelectorAll("button")[1].click();
     await until(() => $("status").textContent.startsWith("Enviado"), "the print");
     const printed = last("print_pdf");
     report.print = {
@@ -212,6 +213,127 @@ const scenarios = {
     return report;
   },
 
+  /** The format designer: drag blocks, presets, block options, formats, import. */
+  async designer() {
+    await ready();
+    const handles = () => [...$("design-overlays").children];
+    await until(() => handles().length > 0, "the designer preview");
+    const canvas = () => $("design-canvas").getBoundingClientRect();
+    // The page reserves the preview's room before its image arrives.
+    const roomReserved = canvas().height > 100;
+    const saved = () => JSON.parse(localStorage.getItem("xml2pdf.state.v2") ?? "{}").settings ?? {};
+    /** Whether an element is really displayed, whatever its styles say. */
+    const shown = (id) => getComputedStyle($(id)).display !== "none";
+    const kinds = (design) => design?.rows.map((row) => row.blocks.map((block) => block.type)) ?? null;
+    const input = (id, value, type = "input") => {
+      $(id).value = value;
+      $(id).dispatchEvent(new Event(type, { bubbles: true }));
+    };
+    /** Drags one block handle onto a side of another, as the pointer would. */
+    const drag = (sourceId, targetId, side) => {
+      const source = document.querySelector(`.design-block[data-id="${sourceId}"]`);
+      const target = document.querySelector(`.design-block[data-id="${targetId}"]`);
+      if (!source || !target) {
+        const present = handles().map((handle) => handle.dataset.id).join(" ");
+        throw new Error(`cannot drag ${sourceId} to ${targetId}; handles: ${present}`);
+      }
+      const box = target.getBoundingClientRect();
+      const [x, y] = { left: [0.1, 0.5], right: [0.9, 0.5], above: [0.5, 0.1], below: [0.5, 0.9] }[side];
+      const at = { clientX: box.left + box.width * x, clientY: box.top + box.height * y, bubbles: true, cancelable: true };
+      // Mouse events carry the pointer position reliably when built by a script.
+      source.dispatchEvent(new MouseEvent("dragstart", { bubbles: true }));
+      target.dispatchEvent(new MouseEvent("dragover", at));
+      const zone = target.dataset.zone;
+      target.dispatchEvent(new MouseEvent("drop", at));
+      return zone;
+    };
+
+    const report = {
+      initialHandles: handles().map((handle) => handle.dataset.id),
+      initialLabels: handles().slice(0, 2).map((handle) => handle.textContent),
+      designBeforeEditing: saved().page_design ?? null,
+      blockEditorHidden: !shown("design-block"),
+      roomReserved,
+    };
+    window.uiCheckPartial = report;
+
+    // The QR goes beside the document box; then the totals get a row above the customer.
+    report.zoneBeside = drag("r7b1", "r0b1", "left");
+    report.afterBeside = kinds(saved().page_design);
+    report.zoneAbove = drag("r4b0", "r1b0", "above");
+    report.afterAbove = kinds(saved().page_design);
+    // A row that is already full gets the block on a row of its own instead.
+    drag("r8b0", "r0b2", "right");
+    report.afterFullRow = kinds(saved().page_design).slice(0, 2);
+    report.selectedAfterDrag = document.querySelector(".design-block.selected")?.dataset.id ?? null;
+
+    document.querySelector('[data-preset="moderno"]').click();
+    report.preset = { style: saved().page_design.style, firstRow: kinds(saved().page_design)[0] };
+
+    document.querySelector('.design-block[data-id="r0b1"]').click();
+    report.blockEditor = {
+      hidden: !shown("design-block"),
+      name: $("design-block-name").textContent,
+      // Only the options that apply to the chosen block are offered.
+      textField: shown("design-block-text-field"),
+      columnsField: shown("design-block-columns-field"),
+    };
+    input("design-block-width", "4");
+    input("design-block-boxed", "false");
+    input("design-block-align", "right");
+    report.editedBlock = saved().page_design.rows[0].blocks[1];
+
+    document.querySelector('#design-palette [data-kind="text"]').click();
+    input("design-block-text", "Gracias por su compra", "change");
+    report.addedText = saved().page_design.rows.at(-1).blocks;
+
+    const itemsRow = saved().page_design.rows.findIndex((row) => row.blocks[0].type === "items");
+    document.querySelector(`.design-block[data-id="r${itemsRow}b0"]`).click();
+    const code = document.querySelector('#design-block-columns input[value="code"]');
+    code.checked = false;
+    code.dispatchEvent(new Event("input", { bubbles: true }));
+    report.columns = saved().page_design.rows[itemsRow].blocks[0].columns;
+
+    input("design-boxes", "square");
+    report.boxes = saved().page_design.style.boxes;
+    report.previewError = $("design-error").textContent;
+
+    // An invalid file is refused and the design stays as it was.
+    const before = JSON.stringify(saved().page_design);
+    const transfer = new DataTransfer();
+    transfer.items.add(new File(['{"page_design":{"rows":[{"blocks":[]}]}}'], "malo.json", { type: "application/json" }));
+    $("design-import-file").files = transfer.files;
+    $("design-import-file").dispatchEvent(new Event("change"));
+    await until(() => $("design-error").textContent !== "", "the import error");
+    report.importError = $("design-error").textContent;
+    report.designKeptAfterBadImport = JSON.stringify(saved().page_design) === before;
+
+    // Tickets have their own design.
+    input("design-format", "ticket80");
+    report.ticket = {
+      canvasIsTicket: $("design-canvas").classList.contains("ticket"),
+      handles: handles().length,
+      designBeforeEditing: saved().ticket_design ?? null,
+    };
+    document.querySelector('#design-palette [data-kind="spacer"]').click();
+    report.ticket.lastRow = kinds(saved().ticket_design).at(-1);
+    report.pageDesignUntouched = JSON.stringify(saved().page_design) !== "null";
+
+    // A document converts with the designs in place.
+    await paste(new TextDecoder().decode(await fetchBytes("factura.xml")));
+    await until(previewsDrawn, "the previews");
+    report.converted = { formats: document.querySelectorAll(".format").length, errors: $("errors").children.length };
+
+    input("design-format", "a4");
+    $("design-reset").click();
+    report.afterReset = {
+      design: saved().page_design ?? null,
+      handles: handles().length,
+      blockEditorHidden: !shown("design-block"),
+    };
+    return report;
+  },
+
   /** Choose one ZIP holding more documents than a batch accepts. */
   async ziplimit() {
     await ready();
@@ -233,7 +355,8 @@ if (scenarios[scenario]) {
   try {
     report = await scenarios[scenario]();
   } catch (error) {
-    report = { error: String(error), status: $("status")?.textContent };
+    // What a scenario gathered before failing helps to see where it stopped.
+    report = { error: String(error), status: $("status")?.textContent, partial: window.uiCheckPartial };
   }
   window.scrollTo(0, 0);
   await fetch(`/report/${scenario}`, { method: "POST", body: JSON.stringify(report) });

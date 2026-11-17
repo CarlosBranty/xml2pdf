@@ -28,7 +28,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SCENARIOS = ["paste", "invalid", "bulk", "ziplimit"]
+SCENARIOS = ["paste", "invalid", "bulk", "ziplimit", "designer"]
 SCENARIO_TIMEOUT_SECONDS = 240
 # A 1x1 transparent PNG, served once a scenario has reported.
 PIXEL = bytes.fromhex(
@@ -171,7 +171,15 @@ def verify_desktop(failures: list, desktop: dict) -> None:
                 "watch_on_start": False,
                 "format": "a4",
             },
-            "render": {"issuer_lines": [], "footer": None, "show_qr": True, "logo": None, "template": None},
+            "render": {
+                "issuer_lines": [],
+                "footer": None,
+                "show_qr": True,
+                "logo": None,
+                "template": None,
+                "page_design": None,
+                "ticket_design": None,
+            },
         },
     )
     check("watch state", desktop["watchState"], "Vigilando")
@@ -183,6 +191,69 @@ def verify_desktop(failures: list, desktop: dict) -> None:
     )
 
 
+def verify_designer(failures: list, designer: dict) -> None:
+    check = partial(expect, failures, "designer")
+    classic = [
+        ["issuer", "document"], ["customer", "dates"], ["affected"], ["items"], ["totals"],
+        ["words"], ["details"], ["legal", "qr"], ["credit"],
+    ]
+    check(
+        "a handle over every visible block",
+        designer["initialHandles"],
+        ["r0b0", "r0b1", "r1b0", "r1b1", "r3b0", "r4b0", "r5b0", "r6b0", "r7b0", "r7b1", "r8b0"],
+    )
+    check("handle labels", designer["initialLabels"], ["Logo y emisor", "RUC y número"])
+    check("no design stored before editing", designer["designBeforeEditing"], None)
+    check("block editor hidden until a block is chosen", designer["blockEditorHidden"], True)
+    check("handles have their place before the image loads", designer["roomReserved"], True)
+
+    check("drop zone beside", designer["zoneBeside"], "left")
+    beside = [["issuer", "qr", "document"]] + classic[1:7] + [["legal"], ["credit"]]
+    check("block dropped beside another", designer["afterBeside"], beside)
+    check("drop zone above", designer["zoneAbove"], "above")
+    above = [beside[0], ["totals"], ["customer", "dates"], ["affected"], ["items"], ["words"], ["details"], ["legal"], ["credit"]]
+    check("block dropped above another", designer["afterAbove"], above)
+    check("a full row sends the block to its own row", designer["afterFullRow"], [beside[0], ["credit"]])
+    check("the moved block stays selected", designer["selectedAfterDrag"], "r1b0")
+
+    check(
+        "preset",
+        designer["preset"],
+        {
+            "style": {"text": "normal", "boxes": "lines", "heading": "inverted", "stripes": False, "filler_rows": False},
+            "firstRow": ["issuer", "document"],
+        },
+    )
+    check(
+        "block editor",
+        designer["blockEditor"],
+        {"hidden": False, "name": "RUC y número", "textField": False, "columnsField": False},
+    )
+    check(
+        "edited block",
+        designer["editedBlock"],
+        {"type": "document", "width": 4, "boxed": False, "align": "right"},
+    )
+    check("added text block", designer["addedText"], [{"type": "text", "text": "Gracias por su compra"}])
+    check(
+        "items columns",
+        designer["columns"],
+        ["quantity", "unit_code", "description", "unit_value", "unit_price", "total"],
+    )
+    check("box style", designer["boxes"], "square")
+    check("the preview drew every edit", designer["previewError"], "")
+    check("bad import reported", designer["importError"].startswith("No se pudo importar el diseño: "), True)
+    check("design kept after a bad import", designer["designKeptAfterBadImport"], True)
+    check(
+        "ticket designer",
+        designer["ticket"],
+        {"canvasIsTicket": True, "handles": 16, "designBeforeEditing": None, "lastRow": ["spacer"]},
+    )
+    check("page design kept while editing the ticket", designer["pageDesignUntouched"], True)
+    check("conversion with custom designs", designer["converted"], {"formats": 5, "errors": 0})
+    check("reset", designer["afterReset"], {"design": None, "handles": 11, "blockEditorHidden": True})
+
+
 def verify(reports: dict, uploads: dict, scenarios: list) -> list:
     failures: list = []
     for scenario in scenarios:
@@ -191,6 +262,8 @@ def verify(reports: dict, uploads: dict, scenarios: list) -> list:
             failures.append(f"{scenario}: the page did not report")
         elif "error" in report:
             failures.append(f"{scenario}: {report['error']} (status: {report.get('status')})")
+            if report.get("partial"):
+                failures.append(f"{scenario}: gathered before failing: {json.dumps(report['partial'], ensure_ascii=False)}")
     if failures:
         return failures
 
@@ -214,7 +287,7 @@ def verify(reports: dict, uploads: dict, scenarios: list) -> list:
     )
     check("status", paste["status"], "Descargado: 20123456789-01-F001-00000123-a4.pdf")
     check("title", paste["title"], "Elige tu formato")
-    check("formats", paste["formats"], ["A4", "A5", "Ticket 80", "Ticket 58"])
+    check("formats", paste["formats"], ["A4", "A5", "Carta", "Ticket 80", "Ticket 58"])
     check("batch list hidden", paste["batchHidden"], True)
     check("errors", paste["errors"], 0)
     check("saved file", paste["saved"], "20123456789-01-F001-00000123-a4.pdf")
@@ -245,7 +318,7 @@ def verify(reports: dict, uploads: dict, scenarios: list) -> list:
         ["lote-003.xmlunsupported document `ApplicationResponse`: expected Invoice, CreditNote or DebitNote"],
     )
     check("first document selected", bulk["selectedRow"], 0)
-    check("formats", bulk["formats"], 4)
+    check("formats", bulk["formats"], 5)
     check("omitted notice hidden", bulk["noticeHidden"], True)
     check("selection after click", bulk["selectedAfterClick"], 1)
     check("Guardar todos disabled while running", bulk["saveAllDisabledWhileRunning"], True)
@@ -268,6 +341,7 @@ def verify(reports: dict, uploads: dict, scenarios: list) -> list:
         "Se convirtieron los primeros 100 comprobantes; 3 quedaron fuera de esta tanda. "
         "Conviértelos en una tanda aparte.",
     )
+    verify_designer(failures, reports["designer"])
     if "desktop" in scenarios:
         verify_desktop(failures, reports["desktop"])
     return failures

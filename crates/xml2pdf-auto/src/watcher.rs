@@ -1,6 +1,8 @@
 //! Watches a folder and processes every XML or ZIP file that appears in it.
 
+use std::any::Any;
 use std::collections::HashMap;
+use std::panic::{self, AssertUnwindSafe};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -113,13 +115,21 @@ pub fn watch(
                 }
                 done.insert(path.clone(), signature);
 
-                match process_file(&path, &config, &options, printer.as_ref()) {
-                    Ok(processed) => processed
+                // A crash while handling one file must not end the watcher.
+                let outcome = panic::catch_unwind(AssertUnwindSafe(|| {
+                    process_file(&path, &config, &options, printer.as_ref())
+                }));
+                match outcome {
+                    Ok(Ok(processed)) => processed
                         .into_iter()
                         .for_each(|item| on_event(WatchEvent::Processed(item))),
-                    Err(err) => on_event(WatchEvent::Failed {
+                    Ok(Err(err)) => on_event(WatchEvent::Failed {
                         source: path,
                         message: err.to_string(),
+                    }),
+                    Err(crash) => on_event(WatchEvent::Failed {
+                        source: path,
+                        message: format!("the conversion crashed: {}", crash_message(&*crash)),
                     }),
                 }
             }
@@ -130,6 +140,15 @@ pub fn watch(
         stop,
         thread: Some(thread),
     })
+}
+
+/// Text of a panic payload, when it carries one.
+fn crash_message(crash: &(dyn Any + Send)) -> &str {
+    crash
+        .downcast_ref::<&str>()
+        .copied()
+        .or_else(|| crash.downcast_ref::<String>().map(String::as_str))
+        .unwrap_or("unknown error")
 }
 
 /// A file seen by the watcher that may still be growing.

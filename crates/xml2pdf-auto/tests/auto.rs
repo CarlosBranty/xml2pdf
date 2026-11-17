@@ -21,11 +21,13 @@ struct Printed {
     media: Option<String>,
 }
 
-/// Printer port double: records jobs, or fails every job when `broken`.
+/// Printer port double: records jobs, fails every job when `broken`, or
+/// panics on its first job when `panics_once`.
 #[derive(Default)]
 struct FakePrinter {
     jobs: Mutex<Vec<Printed>>,
     broken: bool,
+    panics_once: std::sync::atomic::AtomicBool,
 }
 
 impl Printer for FakePrinter {
@@ -34,6 +36,12 @@ impl Printer for FakePrinter {
     }
 
     fn print(&self, job: &PrintJob) -> Result<(), PrintError> {
+        if self
+            .panics_once
+            .swap(false, std::sync::atomic::Ordering::SeqCst)
+        {
+            panic!("the printer driver crashed");
+        }
         if self.broken {
             return Err(PrintError::Failed {
                 program: "lp".into(),
@@ -397,4 +405,30 @@ fn refuses_to_watch_without_a_valid_folder() {
         ..AutoConfig::default()
     };
     assert!(matches!(start(missing), Err(WatchError::MissingFolder(_))));
+}
+
+#[test]
+fn keeps_watching_after_a_document_crashes_the_conversion() {
+    let folder = tempfile::tempdir().unwrap();
+    let printer = Arc::new(FakePrinter {
+        panics_once: std::sync::atomic::AtomicBool::new(true),
+        ..FakePrinter::default()
+    });
+    let (handle, events) = start_watching(folder.path(), Arc::clone(&printer), true);
+
+    std::fs::copy(fixture("boleta.xml"), folder.path().join("primero.xml")).unwrap();
+    match events.recv_timeout(EVENT_TIMEOUT).unwrap() {
+        WatchEvent::Failed { source, message } => {
+            assert_eq!(source, folder.path().join("primero.xml"));
+            assert!(message.contains("the printer driver crashed"), "{message}");
+        }
+        other => panic!("unexpected event {other:?}"),
+    }
+
+    std::fs::copy(fixture("factura.xml"), folder.path().join("segundo.xml")).unwrap();
+    match events.recv_timeout(EVENT_TIMEOUT).unwrap() {
+        WatchEvent::Processed(item) => assert!(item.printed, "the next document is still handled"),
+        other => panic!("unexpected event {other:?}"),
+    }
+    handle.stop();
 }

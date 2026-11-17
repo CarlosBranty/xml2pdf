@@ -16,7 +16,8 @@
 		header {
 			# The app loads only its own files; `wasm-unsafe-eval` allows
 			# compiling the WebAssembly module and `blob:` the PDF preview.
-			Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; img-src 'self' data: blob:; frame-src blob:; object-src blob:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+			# Only qlab.pe may show the tool inside a frame.
+			Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; img-src 'self' data: blob:; frame-src blob:; object-src blob:; base-uri 'none'; form-action 'none'; frame-ancestors 'self' https://qlab.pe https://*.qlab.pe"
 			X-Content-Type-Options "nosniff"
 			Referrer-Policy "no-referrer"
 			# File names carry no content hash, so browsers revalidate on each visit.

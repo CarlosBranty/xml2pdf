@@ -55,10 +55,10 @@ assert.deepEqual([a4.width, a4.height], [210, 297], "the page size is reported")
 const [ticket] = convert("factura.xml", { format: "ticket80" });
 assert.ok(ticket.width === 80 && ticket.height > 60, "tickets report their real height");
 
-assert.throws(() => convert("factura.xml", { format: "letter" }), /invalid settings/);
+assert.throws(() => convert("factura.xml", { format: "legal" }), /invalid settings/);
 assert.throws(() => convert("factura.xml", { accent_color: "#aa0000" }), /invalid settings/);
 assert.throws(() => convert("factura.xml", {}, "#let broken = ("), /template failed to compile/);
-assert.throws(() => wasm.builtinTemplate("letter"), /unknown format/);
+assert.throws(() => wasm.builtinTemplate("legal"), /unknown format/);
 assert.match(wasm.builtinTemplate("ticket58"), /data\.json/);
 assert.match(wasm.templateData("factura.xml", fixture("factura.xml"), JSON.stringify(defaults)), /F001-00000123/);
 
@@ -88,5 +88,26 @@ assert.deepEqual(
   "packed files keep their order and repeated names get a suffix",
 );
 assert.deepEqual(packed[1].bytes, entries[1].bytes);
+
+// Format designer: catalog, presets and the preview with block positions.
+const catalog = JSON.parse(wasm.designCatalog());
+assert.deepEqual(catalog.presets.map((preset) => preset.id), ["clasico", "moderno", "compacto", "minimo"]);
+assert.equal(catalog.blocks.length, 15);
+const modern = JSON.parse(wasm.presetDesign("moderno", "page"));
+assert.equal(modern.style.heading, "inverted");
+assert.throws(() => wasm.presetDesign("barroco", "page"), /unknown variant/);
+
+const designed = wasm.designPreview(fixture("factura.xml"), JSON.stringify({ ...defaults, page_design: modern }), undefined);
+assert.ok(designed.svg.startsWith("<svg"));
+assert.equal(Math.round(designed.widthPt), 595);
+const placed = JSON.parse(designed.blocks);
+assert.deepEqual(placed.slice(0, 3).map((block) => block.id), ["r0b0", "r0b1", "r1b0"]);
+assert.ok(placed.every((block) => block.width > 0 && block.height > 0));
+assert.throws(
+  () => wasm.designPreview(fixture("factura.xml"), JSON.stringify({ ...defaults, page_design: { rows: [{ blocks: [] }] } }), undefined),
+  /invalid design/,
+);
+const [letter] = convert("factura.xml", { format: "letter" });
+assert.deepEqual([letter.width, letter.height], [216, 279], "letter paper is offered");
 
 console.log("web smoke test passed");

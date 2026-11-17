@@ -2,7 +2,7 @@
 //! locally, so the files never leave the user's machine.
 
 use wasm_bindgen::prelude::*;
-use xml2pdf_render::{Logo, PaperFormat, RenderOptions, Settings};
+use xml2pdf_render::{Design, Family, Logo, PaperFormat, Preset, RenderOptions, Settings};
 
 /// A PDF generated from one XML document.
 #[wasm_bindgen]
@@ -80,6 +80,74 @@ pub fn template_data(name: &str, bytes: &[u8], settings: &str) -> Result<String,
     Ok(serde_json::to_string_pretty(
         &xml2pdf_render::template_data(&document, &options),
     )?)
+}
+
+/// What the format designer shows for one document.
+#[wasm_bindgen]
+pub struct DesignerPreview {
+    svg: String,
+    width_pt: f64,
+    height_pt: f64,
+    blocks: String,
+}
+
+#[wasm_bindgen]
+impl DesignerPreview {
+    /// Every page drawn as one SVG image.
+    #[wasm_bindgen(getter)]
+    pub fn svg(&self) -> String {
+        self.svg.clone()
+    }
+
+    /// Width of that image in points.
+    #[wasm_bindgen(getter, js_name = widthPt)]
+    pub fn width_pt(&self) -> f64 {
+        self.width_pt
+    }
+
+    #[wasm_bindgen(getter, js_name = heightPt)]
+    pub fn height_pt(&self) -> f64 {
+        self.height_pt
+    }
+
+    /// Place of each block as JSON: `[{ id, x, y, width, height }]`, in points.
+    #[wasm_bindgen(getter)]
+    pub fn blocks(&self) -> String {
+        self.blocks.clone()
+    }
+}
+
+/// Renders one XML document for the format designer.
+#[wasm_bindgen(js_name = designPreview)]
+pub fn design_preview(
+    bytes: &[u8],
+    settings: &str,
+    logo: Option<Vec<u8>>,
+) -> Result<DesignerPreview, JsError> {
+    let options = options(settings, logo, None)?;
+    let document = xml2pdf_core::parse_bytes(bytes)?;
+    let preview = xml2pdf_render::design_preview(&document, &options)?;
+    Ok(DesignerPreview {
+        svg: preview.svg,
+        width_pt: preview.width_pt,
+        height_pt: preview.height_pt,
+        blocks: serde_json::to_string(&preview.blocks)?,
+    })
+}
+
+/// Presets, blocks and item columns a designer can offer, as JSON.
+#[wasm_bindgen(js_name = designCatalog)]
+pub fn design_catalog() -> String {
+    xml2pdf_render::design_catalog().to_string()
+}
+
+/// Returns a ready-made design as JSON. `preset` is one of the catalog
+/// presets and `family` is `page` or `ticket`.
+#[wasm_bindgen(js_name = presetDesign)]
+pub fn preset_design(preset: &str, family: &str) -> Result<String, JsError> {
+    let preset: Preset = serde_json::from_value(serde_json::json!(preset))?;
+    let family: Family = serde_json::from_value(serde_json::json!(family))?;
+    Ok(serde_json::to_string(&Design::preset(preset, family))?)
 }
 
 /// Renders one XML document to PDF without drawing a preview, which is

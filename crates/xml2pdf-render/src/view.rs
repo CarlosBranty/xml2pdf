@@ -134,13 +134,10 @@ fn document_fields(document: &Document) -> Vec<Value> {
 
 fn line(line: &Line) -> Value {
     let with_taxes = line.line_total + line.tax_amount;
-    let unit_price = line.unit_price.unwrap_or_else(|| {
-        if line.quantity.is_zero() {
-            Decimal::ZERO
-        } else {
-            with_taxes / line.quantity
-        }
-    });
+    // A zero or absurdly small quantity has no meaningful unit price.
+    let unit_price = line
+        .unit_price
+        .unwrap_or_else(|| with_taxes.checked_div(line.quantity).unwrap_or_default());
 
     json!({
         "number": line.number,

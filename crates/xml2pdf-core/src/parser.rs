@@ -192,8 +192,18 @@ fn text(node: Node, name: &str) -> Option<String> {
     child(node, name).and_then(own_text)
 }
 
+/// Largest magnitude accepted for an amount or a quantity. Real documents
+/// stay far below it; ignoring larger values keeps later sums from overflowing.
+const MAX_MAGNITUDE: i64 = 1_000_000_000_000_000;
+
+/// Parses a decimal number, ignoring values too large to be real.
+fn bounded_decimal(value: &str) -> Option<Decimal> {
+    let parsed = Decimal::from_str(value).ok()?;
+    (parsed.abs() <= Decimal::from(MAX_MAGNITUDE)).then_some(parsed)
+}
+
 fn decimal(node: Node, name: &str) -> Option<Decimal> {
-    text(node, name).and_then(|value| Decimal::from_str(&value).ok())
+    text(node, name).and_then(|value| bounded_decimal(&value))
 }
 
 fn party(root: Node, wrapper: &str) -> Party {
@@ -289,11 +299,11 @@ fn line(node: Node, quantity_tag: &str) -> Line {
             .to_owned(),
         quantity: quantity
             .and_then(own_text)
-            .and_then(|value| Decimal::from_str(&value).ok())
+            .and_then(|value| bounded_decimal(&value))
             .unwrap_or_default(),
         unit_value: path(node, &["Price", "PriceAmount"])
             .and_then(own_text)
-            .and_then(|value| Decimal::from_str(&value).ok())
+            .and_then(|value| bounded_decimal(&value))
             .unwrap_or_default(),
         unit_price,
         line_total: decimal(node, "LineExtensionAmount").unwrap_or_default(),

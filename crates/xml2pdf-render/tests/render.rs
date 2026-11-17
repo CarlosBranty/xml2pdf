@@ -497,3 +497,29 @@ fn summarizes_a_document_for_listings() {
     assert_eq!(debit["title"], "NOTA DE DÉBITO ELECTRÓNICA");
     assert_eq!(debit["total"], "$ 1,593.00");
 }
+
+#[test]
+fn survives_amounts_too_large_to_compute_with() {
+    let xml = String::from_utf8(fixture("factura.xml")).unwrap();
+    // Larger than any real amount: adding two of these overflows a decimal.
+    let huge = xml.replace(">1000.00<", ">79228162514264337593543950335<");
+    // A quantity so small that dividing by it overflows.
+    let tiny = xml
+        .replace(
+            "unitCode=\"NIU\">10<",
+            "unitCode=\"NIU\">0.0000000000000000000000000001<",
+        )
+        .replace(
+            "<cbc:PriceTypeCode>01</cbc:PriceTypeCode>",
+            "<cbc:PriceTypeCode>99</cbc:PriceTypeCode>",
+        )
+        .replace(
+            "<cbc:PriceAmount currencyID=\"PEN\">118.00</cbc:PriceAmount>",
+            "",
+        );
+
+    for (name, hostile) in [("huge", huge), ("tiny", tiny)] {
+        let rendered = convert("factura.xml", hostile.as_bytes(), &RenderOptions::default());
+        assert!(rendered.is_ok(), "{name}: {:?}", rendered.err());
+    }
+}
